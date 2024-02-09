@@ -1,4 +1,4 @@
 package it.unicam.cs.CityTourNet;
 
-public class Prova {
+public class prova {
 }

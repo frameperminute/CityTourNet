@@ -7,7 +7,10 @@ public class Account {
 
     private String password;
 
-    public Account(String username, String password) {
+    private final AccountType accountType;
+
+    public Account(AccountType accountType, String username, String password) {
+        this.accountType = accountType;
         this.username = username;
         if(Pattern.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
                 password)) {
@@ -18,16 +21,12 @@ public class Account {
     public String getUsername() {
         return username;
     }
-
-    public void changeUsername(String username) {
-        this.username = username;
+    public AccountType getAccountType() {
+        return accountType;
     }
 
-    public void changePassword(String oldPassword, String newPassword) {
-        if(this.password.equals(oldPassword) && Pattern.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)" +
-                                "(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", newPassword)) {
-            this.password = newPassword;
-        }
+    public boolean isPasswordCorrect(String password) {
+        return this.password.equals(password);
     }
 
 }

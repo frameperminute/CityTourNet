@@ -5,26 +5,29 @@ public class Contributor {
 
     private int numeroContenutiApprovati;
 
-    public Contributor(Account account) {
-        this.account = account;
+    public Contributor(String username, String password) {
+        this.account = new Account(AccountType.CONTRIBUTOR,
+                username, password);
         this.numeroContenutiApprovati = 0;
     }
 
-    //TODO inserire Account Curatore come parametro
-    public void registraContenutoApprovato() {
-        this.numeroContenutiApprovati++;
+    public void registraContenutoApprovato(AccountType accountType) {
+        if(accountType == AccountType.CURATORE) {
+            this.numeroContenutiApprovati++;
+        }
     }
 
-    public void changeUsername(String username) {
-        account.changeUsername(username);
-    }
-    public void changePassword(String oldPassword, String newPassword) {
-        account.changePassword(oldPassword, newPassword);
+    public ContributorAutorizzato richiediAutorizzazione(String password) {
+        if(this.numeroContenutiApprovati >= 50 && this.account.isPasswordCorrect(password)) {
+            return new ContributorAutorizzato(new Account(AccountType.CONTRIBUTOR_AUTORIZZATO,
+                    this.account.getUsername(), password));
+        }
+        return null;
     }
 
-    public ContributorAutorizzato richiediAutorizzazione() {
-        if(this.numeroContenutiApprovati >= 50) {
-            return new ContributorAutorizzato(this);
+    public Account getAccount(Account adminAccount) {
+        if(adminAccount.getAccountType() == AccountType.GESTORE_DELLA_PIATTAFORMA) {
+            return this.account;
         }
         return null;
     }

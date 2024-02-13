@@ -3,9 +3,9 @@ package it.unicam.cs.CityTourNet.model;
 import java.util.regex.Pattern;
 
 public class Account {
-    private String username;
+    private final String username;
 
-    private String password;
+    private final String password;
 
     private final AccountType accountType;
 
@@ -15,11 +15,16 @@ public class Account {
         if(Pattern.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
                 password)) {
             this.password = password;
+        } else {
+            this.password = "";
         }
     }
 
-    public String getUsername() {
-        return username;
+    public String getUsername(String password) {
+        if(this.isPasswordCorrect(password)) {
+            return username;
+        }
+        return null;
     }
     public AccountType getAccountType() {
         return accountType;

@@ -7,7 +7,7 @@ public class Turista {
 
     private CartaDiCredito cartaDiCredito;
 
-    private List<Messaggio> messaggi;
+
 
     public Turista(String username, String password) {
         this.account = new Account(AccountType.TURISTA, username, password);
@@ -22,11 +22,8 @@ public class Turista {
         this.cartaDiCredito = cartaDiCredito;
     }
 
-    public Account getAccount(Account adminAccount) {
-        if(adminAccount.getAccountType() == AccountType.GESTORE_DELLA_PIATTAFORMA) {
-            return this.account;
-        }
-        return null;
+    public Account getAccount() {
+        return this.account;
     }
 
     public TuristaAutenticato richiediAutenticazione(String password) {
@@ -38,19 +35,4 @@ public class Turista {
         return null;
     }
 
-    public void riceviMessaggio(Messaggio messaggio) {
-        this.messaggi.add(messaggio);
-    }
-
-    public void eliminaUltimoMessaggio(String password) {
-        if(this.account.isPasswordCorrect(password)) {
-            this.messaggi.remove(this.messaggi.size()-1);
-        }
-    }
-
-    public void eliminaTuttiIMessaggi(String password) {
-        if(this.account.isPasswordCorrect(password)) {
-            this.messaggi.clear();
-        }
-    }
 }

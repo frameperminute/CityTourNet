@@ -9,8 +9,6 @@ public class TuristaAutenticato {
     private final LocalDateTime dataFineAutenticazione;
     private CartaDiCredito cartaDiCredito;
 
-    private List<Messaggio> messaggi;
-
 
     public TuristaAutenticato(Account account, CartaDiCredito cartaDiCredito) {
         this.account = account;
@@ -22,26 +20,9 @@ public class TuristaAutenticato {
         return (int) ChronoUnit.DAYS.between(LocalDateTime.now(),this.dataFineAutenticazione);
     }
 
-    public Account getAccount(Account adminAccount) {
-        if(adminAccount.getAccountType() == AccountType.GESTORE_DELLA_PIATTAFORMA) {
-            return this.account;
-        }
-        return null;
+    public Account getAccount() {
+        return this.account;
     }
 
-    public void riceviMessaggio(Messaggio messaggio) {
-        this.messaggi.add(messaggio);
-    }
 
-    public void eliminaUltimoMessaggio(String password) {
-        if(this.account.isPasswordCorrect(password)) {
-            this.messaggi.remove(this.messaggi.size()-1);
-        }
-    }
-
-    public void eliminaTuttiIMessaggi(String password) {
-        if(this.account.isPasswordCorrect(password)) {
-            this.messaggi.clear();
-        }
-    }
 }

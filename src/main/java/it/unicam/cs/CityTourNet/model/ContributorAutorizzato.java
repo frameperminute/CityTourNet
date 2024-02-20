@@ -10,10 +10,7 @@ public class ContributorAutorizzato {
         this.autorizzato = true;
     }
 
-    public Account getAccount(Account adminAccount) {
-        if(adminAccount.getAccountType() == AccountType.GESTORE_DELLA_PIATTAFORMA) {
-            return this.account;
-        }
-        return null;
+    public Account getAccount() {
+        return this.account;
     }
 }

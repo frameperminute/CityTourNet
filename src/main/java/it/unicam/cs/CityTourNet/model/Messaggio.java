@@ -1,9 +1,9 @@
 package it.unicam.cs.CityTourNet.model;
 
 public class Messaggio {
-    String testoMessaggio;
+    private String testoMessaggio;
 
-    boolean letto;
+    private boolean letto;
 
     public Messaggio(String testoMessaggio) {
         this.testoMessaggio = testoMessaggio;

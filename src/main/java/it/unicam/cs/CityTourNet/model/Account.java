@@ -20,14 +20,11 @@ public class Account {
         }
     }
 
-    public String getUsername(String password) {
-        if(this.isPasswordCorrect(password)) {
-            return username;
-        }
-        return null;
+    public String getUsername() {
+            return this.username;
     }
     public AccountType getAccountType() {
-        return accountType;
+        return this.accountType;
     }
 
     public boolean isPasswordCorrect(String password) {

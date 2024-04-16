@@ -18,7 +18,7 @@ public class Contributor {
     public ContributorAutorizzato richiediAutorizzazione(String password) {
         if(this.numeroContenutiApprovati >= 50 && this.account.isPasswordCorrect(password)) {
             return new ContributorAutorizzato(new Account(AccountType.CONTRIBUTOR_AUTORIZZATO,
-                    this.account.getUsername(password), password));
+                    this.account.getUsername(), password));
         }
         return null;
     }

@@ -30,7 +30,7 @@ public class Turista {
         if(this.cartaDiCredito.getCredito() >= 50 && this.account.isPasswordCorrect(password)) {
             this.cartaDiCredito.effettuaPagamento(50);
             return new TuristaAutenticato(new Account(AccountType.TURISTA_AUTENTICATO,
-                    this.account.getUsername(password), password),this.cartaDiCredito);
+                    this.account.getUsername(), password),this.cartaDiCredito);
         }
         return null;
     }

@@ -1,7 +1,18 @@
 package it.unicam.cs.CityTourNet.model.contenuto;
 
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.io.File;
 
+@Setter
+@Getter
+@Entity
+@NoArgsConstructor(force = true)
+@DiscriminatorValue("ProdottoGadget")
 public class ProdottoGadget extends Contenuto{
     private double prezzo;
     private int numPezzi;
@@ -12,30 +23,6 @@ public class ProdottoGadget extends Contenuto{
         this.prezzo = prezzo;
         this.numPezzi = numPezzi;
         this.multimedia = multimedia;
-    }
-
-    public double getPrezzo() {
-        return prezzo;
-    }
-
-    public int getNumPezzi() {
-        return numPezzi;
-    }
-
-    public File getMultimedia() {
-        return multimedia;
-    }
-
-    public void setPrezzo(double prezzo) {
-        this.prezzo = prezzo;
-    }
-
-    public void setMultimedia(File multimedia) {
-        this.multimedia = multimedia;
-    }
-
-    public void setNumPezzi(int numPezzi) {
-        this.numPezzi = numPezzi;
     }
 
 }

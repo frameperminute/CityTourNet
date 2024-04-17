@@ -1,10 +1,24 @@
 package it.unicam.cs.CityTourNet.model.contenuto;
 
-import java.time.Duration;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToMany;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.util.List;
 
+@Entity
+@NoArgsConstructor(force = true)
+@DiscriminatorValue("Itinerario")
 public class Itinerario extends Contenuto{
+    @Getter
+    @ManyToMany(fetch = FetchType.EAGER)
     private List<POI> POIsPerItinerario;
+    @Setter
+    @Getter
     private Difficolta difficolta;
     private int ore;
     private int minuti;
@@ -17,10 +31,6 @@ public class Itinerario extends Contenuto{
         this.setDurata(ore,minuti);
     }
 
-    public List<POI> getPOIsPerItinerario() {
-        return POIsPerItinerario;
-    }
-
     public void addPOIPerItinerario(POI POIDaAggiungere) {
         this.POIsPerItinerario.add(POIDaAggiungere);
     }
@@ -29,14 +39,6 @@ public class Itinerario extends Contenuto{
         if(this.POIsPerItinerario.size() > 2) {
             this.POIsPerItinerario.remove(numPOI);
         }
-    }
-
-    public Difficolta getDifficolta() {
-        return difficolta;
-    }
-
-    public void setDifficolta(Difficolta difficolta) {
-        this.difficolta = difficolta;
     }
 
     public String getDurata(){
@@ -49,7 +51,6 @@ public class Itinerario extends Contenuto{
             this.minuti = minuti;
         }
     }
-
     private boolean checkDurata(int ore, int minuti) {
         return 0 <= ore && ore <= 24 && 0 <= minuti && minuti <= 60;
     }

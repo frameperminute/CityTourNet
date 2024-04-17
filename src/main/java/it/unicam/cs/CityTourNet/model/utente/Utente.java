@@ -1,8 +1,18 @@
 package it.unicam.cs.CityTourNet.model.utente;
 
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import java.util.regex.Pattern;
 
+@Entity
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "tipo_utente", discriminatorType = DiscriminatorType.STRING)
+@NoArgsConstructor(force = true)
+@Getter
 public abstract class Utente {
+    @Id
     private String username;
     private String email;
     private String password;
@@ -13,17 +23,6 @@ public abstract class Utente {
         this.password = password;
     }
 
-    public String getUsername() {
-        return username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public String getEmail() {
-        return email;
-    }
     public void setPassword(String password) {
         if(password.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$")) {
             this.password = password;

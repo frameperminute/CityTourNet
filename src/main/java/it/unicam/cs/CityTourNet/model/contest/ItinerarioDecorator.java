@@ -2,7 +2,6 @@ package it.unicam.cs.CityTourNet.model.contest;
 
 import it.unicam.cs.CityTourNet.model.contenuto.Contenuto;
 import it.unicam.cs.CityTourNet.model.contenuto.Itinerario;
-import it.unicam.cs.CityTourNet.model.contenuto.POI;
 
 public class ItinerarioDecorator extends ContestDecorator{
     public ItinerarioDecorator(Contest contest) {

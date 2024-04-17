@@ -2,6 +2,8 @@ package it.unicam.cs.CityTourNet.model.contest;
 
 import it.unicam.cs.CityTourNet.model.contenuto.Contenuto;
 import it.unicam.cs.CityTourNet.model.utente.Utente;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToMany;
 import org.springframework.cglib.core.Local;
 
 import java.time.LocalDateTime;
@@ -9,9 +11,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 public class ConcreteContest implements Contest {
-
+    @ManyToMany(fetch = FetchType.EAGER)
     private List<Utente> partecipanti;
-
+    @ManyToMany(fetch = FetchType.EAGER)
     private List<Contenuto> contenutiContest;
 
     private LocalDateTime dataFine;

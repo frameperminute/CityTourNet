@@ -16,6 +16,8 @@ public abstract class Utente {
     private String username;
     private String email;
     private String password;
+    @Column(name = "tipo_utente", insertable = false, updatable = false)
+    protected String tipoUtente;
 
     public Utente(String username, String email, String password) {
         this.username = username;

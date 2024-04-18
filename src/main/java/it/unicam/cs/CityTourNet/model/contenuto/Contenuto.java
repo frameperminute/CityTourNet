@@ -7,8 +7,8 @@ import lombok.Setter;
 
 @Getter
 @Entity
-@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "tipo_contenuto", discriminatorType = DiscriminatorType.STRING)
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @NoArgsConstructor(force = true)
 public abstract class Contenuto {
     @Setter
@@ -19,6 +19,8 @@ public abstract class Contenuto {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long ID;
+    @Column(name = "tipo_contenuto", insertable = false, updatable = false)
+    protected String tipoContenuto;
 
     public Contenuto(String nome, String descrizione, String usernameAutore) {
         this.nome = nome;

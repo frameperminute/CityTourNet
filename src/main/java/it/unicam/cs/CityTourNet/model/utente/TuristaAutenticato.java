@@ -6,14 +6,20 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Setter
 @Getter
 @Entity
 @NoArgsConstructor(force = true)
 @DiscriminatorValue("TuristaAutenticato")
 public class TuristaAutenticato extends Utente{
+
     private int punti;
+    private LocalDateTime dataInizioAutenticazione;
+
     public TuristaAutenticato(String username, String email, String password) {
         super(username, email, password);
+        this.dataInizioAutenticazione = LocalDateTime.now();
     }
 }

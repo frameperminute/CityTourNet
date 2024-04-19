@@ -14,15 +14,14 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.antlr.v4.runtime.tree.xpath.XPath.findAll;
+
 
 @Service
 public class ContestHandler {
 
-    @Autowired
-    private UtenteRepository utenteRepository;
-    private NotificaRepository notificaRepository;
-    private ContenutoContestRepository contenutoContestRepository;
+    private final UtenteRepository utenteRepository;
+    private final NotificaRepository notificaRepository;
+    private final ContenutoContestRepository contenutoContestRepository;
     private Contest contest;
     private Utente utenteVincitore;
     private boolean isContestItinerario;
@@ -32,6 +31,7 @@ public class ContestHandler {
     private boolean isContestWithContributors;
     private boolean isAttivo;
 
+    @Autowired
     public ContestHandler(UtenteRepository utenteRepository, NotificaRepository notificaRepository,
                             ContenutoContestRepository contenutoContestRepository){
         this.utenteRepository = utenteRepository;

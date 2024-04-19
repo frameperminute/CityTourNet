@@ -1,6 +1,5 @@
 package it.unicam.cs.CityTourNet.model.contest;
 
-import it.unicam.cs.CityTourNet.model.contenuto.Contenuto;
 import it.unicam.cs.CityTourNet.model.utente.Utente;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToMany;
@@ -12,9 +11,9 @@ import java.util.List;
 public class ConcreteContest implements Contest {
     @ManyToMany(fetch = FetchType.EAGER)
     private List<Utente> partecipanti;
-    private LocalDateTime dataFine;
+    private final LocalDateTime dataFine;
 
-    private String tematica;
+    private final String tematica;
 
     public ConcreteContest (LocalDateTime dataFine, String tematica){
         this.dataFine = dataFine;

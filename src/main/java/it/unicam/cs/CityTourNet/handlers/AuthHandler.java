@@ -19,14 +19,14 @@ import java.util.List;
 @Service
 public class AuthHandler {
 
-    private ContenutoRepository contenutoRepository;
-    private UtenteRepository utenteRepository;
-    private NotificaRepository notificaRepository;
+    private final ContenutoRepository contenutoRepository;
+    private final UtenteRepository utenteRepository;
+    private final NotificaRepository notificaRepository;
 
     @Autowired
     public AuthHandler(ContenutoRepository contenutoRepository, UtenteRepository utenteRepository,
                        NotificaRepository notificaRepository){
-        this.contenutoRepository = contenutoRepository;;
+        this.contenutoRepository = contenutoRepository;
         this.utenteRepository = utenteRepository;
         this.notificaRepository = notificaRepository;
     }

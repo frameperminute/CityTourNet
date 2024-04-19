@@ -9,13 +9,15 @@ import it.unicam.cs.CityTourNet.repositories.UtenteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 
 @Service
 public class CompraVenditaHandler {
 
-    private ContenutoRepository contenutoRepository;
-    private UtenteRepository utenteRepository;
-    private NotificaRepository notificaRepository;
+    private final ContenutoRepository contenutoRepository;
+    private final UtenteRepository utenteRepository;
+    private final NotificaRepository notificaRepository;
 
     @Autowired
     public CompraVenditaHandler(ContenutoRepository contenutoRepository,
@@ -27,6 +29,24 @@ public class CompraVenditaHandler {
 
     public ProdottoGadget getProdottoGadget(long id){
         return (ProdottoGadget) this.contenutoRepository.getReferenceById(id);
+    }
+
+    public List<ProdottoGadget> getProdottiGadget(){
+        return this.contenutoRepository.findAll()
+                .stream()
+                .filter(c -> c.getTipoContenuto().equals("ProdottoGadget"))
+                .map(c -> (ProdottoGadget) c)
+                .toList();
+    }
+
+    public boolean addProdottoGadget(ProdottoGadget gadget) {
+        this.contenutoRepository.save(gadget);
+        return true;
+    }
+
+    public boolean removeProdottoGadget(long ID){
+        this.contenutoRepository.deleteById(ID);
+        return true;
     }
 
     public ContributorAutorizzato getVenditore(long id){
@@ -45,14 +65,14 @@ public class CompraVenditaHandler {
         return -1;
     }
 
-    public boolean riduciNumeroPezziDisponibili(long id, int numPezzi) {
+    private boolean riduciNumeroPezziDisponibili(long id, int numPezzi) {
         ProdottoGadget daAcquistare = this.getProdottoGadget(id);
         daAcquistare.setNumPezzi(daAcquistare.getNumPezzi() - numPezzi);
         this.contenutoRepository.saveAndFlush(daAcquistare);
         return true;
     }
 
-    public boolean gestisciAcquistoProdottoGadget(long ID, int numPezzi, String username) {
+    public boolean gestisciAcquistoProdottoGadget(long ID, int numPezzi, String username, String indirizzo) {
         Acquirente acquirente = (Acquirente) this.utenteRepository.getReferenceById(username);
         ProdottoGadget prodottoDaAcquistare = (ProdottoGadget) this.contenutoRepository.getReferenceById(ID);
         int totale = prodottoDaAcquistare.getPrezzo()*numPezzi;
@@ -62,7 +82,7 @@ public class CompraVenditaHandler {
                 acquirente.setPunti(acquirente.getPunti() - totale);
                 this.utenteRepository.saveAndFlush((Utente) acquirente);
                 this.inviaNotificaAcquistoConfermato(prodottoDaAcquistare.getUsernameAutore(), username,
-                        prodottoDaAcquistare.getNome(), numPezzi, totale);
+                        prodottoDaAcquistare.getNome(), numPezzi, totale, indirizzo);
                 return true;
             } else {
                 this.inviaNotificaPuntiInsufficienti(prodottoDaAcquistare.getUsernameAutore(),username);
@@ -75,9 +95,11 @@ public class CompraVenditaHandler {
 
 
     private boolean inviaNotificaAcquistoConfermato(String usernameAutore, String usernameAcquirente,
-                                                    String nomeProdottoGadget, int numPezzi, int prezzo){
+                                                    String nomeProdottoGadget, int numPezzi,
+                                                    int prezzo, String indirizzo){
         String testo = "Hai acquistato " + numPezzi + " pezzi del prodotto: " + nomeProdottoGadget + ".\n"
-                + "Il costo totale e': " + prezzo + "\n";
+                + "Il costo totale e': " + prezzo + "\n" +
+                "Il prodotto verra' spedito a breve a questo indirizzo: " + indirizzo;
         Notifica notifica = new Notifica(usernameAutore, usernameAcquirente, testo);
         this.notificaRepository.saveAndFlush(notifica);
         return true;

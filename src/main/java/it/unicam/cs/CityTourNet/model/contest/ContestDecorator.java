@@ -2,11 +2,10 @@ package it.unicam.cs.CityTourNet.model.contest;
 
 import it.unicam.cs.CityTourNet.model.utente.Utente;
 
-import java.util.List;
 
 public class ContestDecorator implements Contest {
 
-    private Contest contest;
+    private final Contest contest;
 
     public ContestDecorator(Contest contest) {
         this.contest = contest;

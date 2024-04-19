@@ -14,11 +14,11 @@ import java.util.List;
 @Service
 public class ContenutoHandler {
 
-    private ContenutoRepository contenutoRepository;
-    private NotificaRepository notificaRepository;
-    private UtenteRepository utenteRepository;
-    private ContenutoInPendingRepository contenutoInPendingRepository;
-    private ContenutoContestRepository contenutoContestRepository;
+    private final ContenutoRepository contenutoRepository;
+    private final NotificaRepository notificaRepository;
+    private final UtenteRepository utenteRepository;
+    private final ContenutoInPendingRepository contenutoInPendingRepository;
+    private final ContenutoContestRepository contenutoContestRepository;
 
     @Autowired
     public ContenutoHandler(ContenutoRepository contenutoRepository, NotificaRepository notificaRepository,
@@ -39,11 +39,6 @@ public class ContenutoHandler {
 
     public boolean addItinerario(Itinerario itinerario) {
         this.contenutoRepository.save(itinerario);
-        return true;
-    }
-
-    public boolean addProdottoGadget(ProdottoGadget gadget) {
-        this.contenutoRepository.save(gadget);
         return true;
     }
 
@@ -100,14 +95,6 @@ public class ContenutoHandler {
         return this.contenutoRepository.findAll().stream()
                 .filter(c -> c.getTipoContenuto().equals("Itinerario"))
                 .map(c -> (Itinerario) c)
-                .toList();
-    }
-
-    public List<ProdottoGadget> getProdottiGadget(){
-        return this.contenutoRepository.findAll()
-                .stream()
-                .filter(c -> c.getTipoContenuto().equals("ProdottoGadget"))
-                .map(c -> (ProdottoGadget) c)
                 .toList();
     }
 

@@ -12,7 +12,7 @@ import lombok.Setter;
 @Entity
 @NoArgsConstructor(force = true)
 @DiscriminatorValue("Turista")
-public class Turista extends Utente{
+public class Turista extends Utente implements Acquirente{
     private int punti;
     public Turista(String username, String email, String password) {
         super(username, email, password);

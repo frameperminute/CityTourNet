@@ -4,7 +4,6 @@ import it.unicam.cs.CityTourNet.model.contenuto.Contenuto;
 import it.unicam.cs.CityTourNet.model.utente.Utente;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToMany;
-import org.springframework.cglib.core.Local;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -13,9 +12,6 @@ import java.util.List;
 public class ConcreteContest implements Contest {
     @ManyToMany(fetch = FetchType.EAGER)
     private List<Utente> partecipanti;
-    @ManyToMany(fetch = FetchType.EAGER)
-    private List<Contenuto> contenutiContest;
-
     private LocalDateTime dataFine;
 
     private String tematica;
@@ -26,31 +22,15 @@ public class ConcreteContest implements Contest {
     }
 
     @Override
-    public List<Utente> getPartecipanti() {
-        return this.partecipanti;
+    public Utente getPartecipante(String username) {
+        return this.partecipanti.stream()
+                .filter(x -> x.getUsername().equals(username))
+                .findFirst().orElse(null);
     }
 
     @Override
-    public String getUsernameAutore(Contenuto contenuto) {
-        if(contenutiContest.contains(contenuto)){
-            return contenuto.getUsernameAutore();
-        }
-        return "";
-    }
-
-    @Override
-    public List<Contenuto> getContenuti() {
-        return this.contenutiContest;
-    }
-
-    @Override
-    public void addPartecipanti(List<Utente> partecipanti) {
-        this.partecipanti.addAll(partecipanti);
-    }
-
-    @Override
-    public void addContenuto(Contenuto contenuto) {
-        this.contenutiContest.add(contenuto);
+    public boolean addPartecipante(Utente partecipante) {
+        return this.partecipanti.add(partecipante);
     }
 
     @Override

@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Setter
@@ -13,7 +14,7 @@ import java.time.LocalDateTime;
 @Entity
 @NoArgsConstructor(force = true)
 @DiscriminatorValue("TuristaAutenticato")
-public class TuristaAutenticato extends Utente{
+public class TuristaAutenticato extends Utente implements Acquirente {
 
     private int punti;
     private LocalDateTime dataInizioAutenticazione;

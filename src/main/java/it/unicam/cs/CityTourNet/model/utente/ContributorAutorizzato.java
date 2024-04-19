@@ -16,5 +16,6 @@ public class ContributorAutorizzato extends Utente{
 
     public ContributorAutorizzato(String username, String email, String password) {
         super(username, email, password);
+        this.esitiNegativi = 0;
     }
 }

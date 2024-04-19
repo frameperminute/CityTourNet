@@ -14,10 +14,10 @@ import java.io.File;
 @NoArgsConstructor(force = true)
 @DiscriminatorValue("ProdottoGadget")
 public class ProdottoGadget extends Contenuto{
-    private double prezzo;
+    private int prezzo;
     private int numPezzi;
     private File multimedia;
-    public ProdottoGadget(String nome, String descrizione, String usernameAutore,double prezzo, int numPezzi,
+    public ProdottoGadget(String nome, String descrizione, String usernameAutore,int prezzo, int numPezzi,
                           File multimedia) {
         super(nome, descrizione, usernameAutore);
         this.prezzo = prezzo;

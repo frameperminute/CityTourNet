@@ -6,6 +6,7 @@ import it.unicam.cs.CityTourNet.model.utente.ContributorAutorizzato;
 import it.unicam.cs.CityTourNet.model.utente.Turista;
 import it.unicam.cs.CityTourNet.model.utente.TuristaAutenticato;
 import it.unicam.cs.CityTourNet.repositories.ContenutoRepository;
+import it.unicam.cs.CityTourNet.repositories.NotificaRepository;
 import it.unicam.cs.CityTourNet.repositories.UtenteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,11 +21,14 @@ public class AuthHandler {
 
     private ContenutoRepository contenutoRepository;
     private UtenteRepository utenteRepository;
+    private NotificaRepository notificaRepository;
 
     @Autowired
-    public AuthHandler(ContenutoRepository contenutoRepository, UtenteRepository utenteRepository){
+    public AuthHandler(ContenutoRepository contenutoRepository, UtenteRepository utenteRepository,
+                       NotificaRepository notificaRepository){
         this.contenutoRepository = contenutoRepository;;
         this.utenteRepository = utenteRepository;
+        this.notificaRepository = notificaRepository;
     }
 
     public List<TuristaAutenticato> getTuristiAutenticatiInScadenza(){
@@ -86,28 +90,15 @@ public class AuthHandler {
     }
 
     public boolean gestisciAutorizzazione(){
-        List<ContributorAutorizzato> contributorAutorizzati = this.getContributorAutorizzati()
+        this.getContributorAutorizzati()
                 .stream()
-                .filter( c -> {
-                    if(this.contenutoRepository.findContenutiByUsernameAutore(c.getUsername()).isEmpty()) {
-                        c.setEsitiNegativi(c.getEsitiNegativi() + 1);
-                        this.utenteRepository.saveAndFlush(c);
-                        return true;
-                    }
-                    return false;
-                })
-                .filter(c -> c.getEsitiNegativi() == 3)
-                .toList();
-        List<Contributor> contributorDeclassati = contributorAutorizzati
-                .stream()
-                .map(c -> new Contributor(c.getUsername(),c.getEmail(),c.getPassword()))
-                .toList();
-        this.utenteRepository.deleteAll(contributorAutorizzati);
-        this.utenteRepository.saveAllAndFlush(contributorDeclassati);
-        return true;
+                .filter( c -> this.contenutoRepository.findContenutiByUsernameAutore(c.getUsername()).isEmpty())
+                .map(c -> this.controllaContenutoContributorAutorizzato(c.getUsername())
+                );
+            return true;
     }
 
-    public boolean controlloContenutoContributorAutorizzato(String username){
+    public boolean controllaContenutoContributorAutorizzato(String username){
         ContributorAutorizzato daControllare =
                 (ContributorAutorizzato) this.utenteRepository.getReferenceById(username);
         daControllare.setEsitiNegativi(daControllare.getEsitiNegativi()+1);

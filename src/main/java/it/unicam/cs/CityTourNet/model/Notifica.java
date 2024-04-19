@@ -11,9 +11,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(force = true)
 public class Notifica {
     @Getter
-    private String emailMittente;
+    private String usernameMittente;
     @Getter
-    private String emailDestinatario;
+    private String usernameDestinatario;
     private String testo;
     @Getter
     private boolean letto;
@@ -22,9 +22,9 @@ public class Notifica {
     @Getter
     private long ID;
 
-    public Notifica(String emailMittente, String emailDestinatario, String testo) {
-        this.emailMittente = emailMittente;
-        this.emailDestinatario = emailDestinatario;
+    public Notifica(String usernameMittente, String usernameDestinatario, String testo) {
+        this.usernameMittente = usernameMittente;
+        this.usernameDestinatario = usernameDestinatario;
         this.testo = testo;
         this.letto = false;
     }

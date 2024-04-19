@@ -1,34 +1,28 @@
 package it.unicam.cs.CityTourNet.handlers;
 
+import it.unicam.cs.CityTourNet.model.Notifica;
 import it.unicam.cs.CityTourNet.model.contenuto.ProdottoGadget;
-import it.unicam.cs.CityTourNet.model.utente.ContributorAutorizzato;
-import it.unicam.cs.CityTourNet.model.utente.Turista;
-import it.unicam.cs.CityTourNet.model.utente.TuristaAutenticato;
-import it.unicam.cs.CityTourNet.model.utente.Utente;
+import it.unicam.cs.CityTourNet.model.utente.*;
 import it.unicam.cs.CityTourNet.repositories.ContenutoRepository;
+import it.unicam.cs.CityTourNet.repositories.NotificaRepository;
 import it.unicam.cs.CityTourNet.repositories.UtenteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.util.List;
+
 
 @Service
 public class CompraVenditaHandler {
 
     private ContenutoRepository contenutoRepository;
     private UtenteRepository utenteRepository;
+    private NotificaRepository notificaRepository;
 
     @Autowired
-    public CompraVenditaHandler(ContenutoRepository contenutoRepository, UtenteRepository utenteRepository) {
+    public CompraVenditaHandler(ContenutoRepository contenutoRepository,
+                                UtenteRepository utenteRepository, NotificaRepository notificaRepository) {
         this.contenutoRepository = contenutoRepository;
         this.utenteRepository = utenteRepository;
-    }
-
-    public List<ProdottoGadget> getProdottiGadget(){
-        return this.contenutoRepository
-                .findProdottiGadgetByTipo("ProdottoGadget")
-                .stream()
-                .map(contenuto -> (ProdottoGadget) contenuto)
-                .toList();
+        this.notificaRepository = notificaRepository;
     }
 
     public ProdottoGadget getProdottoGadget(long id){
@@ -58,15 +52,49 @@ public class CompraVenditaHandler {
         return true;
     }
 
-    public boolean removeProdottoGadget(long id) {
-        this.contenutoRepository.deleteById(id);
+    public boolean gestisciAcquistoProdottoGadget(long ID, int numPezzi, String username) {
+        Acquirente acquirente = (Acquirente) this.utenteRepository.getReferenceById(username);
+        ProdottoGadget prodottoDaAcquistare = (ProdottoGadget) this.contenutoRepository.getReferenceById(ID);
+        int totale = prodottoDaAcquistare.getPrezzo()*numPezzi;
+        if(prodottoDaAcquistare.getNumPezzi() >= numPezzi) {
+            if(acquirente.getPunti() >= totale) {
+                this.riduciNumeroPezziDisponibili(ID, numPezzi);
+                acquirente.setPunti(acquirente.getPunti() - totale);
+                this.utenteRepository.saveAndFlush((Utente) acquirente);
+                this.inviaNotificaAcquistoConfermato(prodottoDaAcquistare.getUsernameAutore(), username,
+                        prodottoDaAcquistare.getNome(), numPezzi, totale);
+                return true;
+            } else {
+                this.inviaNotificaPuntiInsufficienti(prodottoDaAcquistare.getUsernameAutore(),username);
+                return false;
+            }
+        }
+        this.inviaNotificaPezziInsufficienti(prodottoDaAcquistare.getUsernameAutore(), username);
+        return false;
+    }
+
+
+    private boolean inviaNotificaAcquistoConfermato(String usernameAutore, String usernameAcquirente,
+                                                    String nomeProdottoGadget, int numPezzi, int prezzo){
+        String testo = "Hai acquistato " + numPezzi + " pezzi del prodotto: " + nomeProdottoGadget + ".\n"
+                + "Il costo totale e': " + prezzo + "\n";
+        Notifica notifica = new Notifica(usernameAutore, usernameAcquirente, testo);
+        this.notificaRepository.saveAndFlush(notifica);
         return true;
     }
 
-    public boolean addProdottoGadget(ProdottoGadget gadget) {
-        this.contenutoRepository.save(gadget);
+    private boolean inviaNotificaPezziInsufficienti(String usernameAutore, String usernameAcquirente) {
+        String testo = "Il numero di pezzi selezionato non è disponibile";
+        Notifica notifica = new Notifica(usernameAutore, usernameAcquirente, testo);
+        this.notificaRepository.saveAndFlush(notifica);
         return true;
     }
 
+    private boolean inviaNotificaPuntiInsufficienti(String usernameAutore, String usernameAcquirente) {
+        String testo = "Non possiedi abbastanza punti per effettuare l'acquisto";
+        Notifica notifica = new Notifica(usernameAutore, usernameAcquirente, testo);
+        this.notificaRepository.saveAndFlush(notifica);
+        return true;
+    }
 
 }

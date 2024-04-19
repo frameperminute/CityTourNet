@@ -1,6 +1,5 @@
 package it.unicam.cs.CityTourNet.model.contest;
 
-import it.unicam.cs.CityTourNet.model.contenuto.Contenuto;
 import it.unicam.cs.CityTourNet.model.utente.Utente;
 
 import java.util.List;
@@ -15,28 +14,13 @@ public class ContestDecorator implements Contest {
 
 
     @Override
-    public List<Utente> getPartecipanti() {
-        return this.contest.getPartecipanti();
+    public Utente getPartecipante(String username) {
+        return this.contest.getPartecipante(username);
     }
 
     @Override
-    public String getUsernameAutore(Contenuto contenuto) {
-        return this.contest.getUsernameAutore(contenuto);
-    }
-
-    @Override
-    public List<Contenuto> getContenuti() {
-        return this.contest.getContenuti();
-    }
-
-    @Override
-    public void addPartecipanti(List<Utente> partecipanti) {
-        this.contest.addPartecipanti(partecipanti);
-    }
-
-    @Override
-    public void addContenuto(Contenuto contenuto) {
-        this.contest.addContenuto(contenuto);
+    public boolean addPartecipante(Utente partecipante) {
+        return this.contest.addPartecipante(partecipante);
     }
 
     @Override

@@ -1,10 +1,7 @@
 package it.unicam.cs.CityTourNet.handlers;
 
 import it.unicam.cs.CityTourNet.model.contenuto.Contenuto;
-import it.unicam.cs.CityTourNet.model.utente.Contributor;
-import it.unicam.cs.CityTourNet.model.utente.ContributorAutorizzato;
-import it.unicam.cs.CityTourNet.model.utente.Turista;
-import it.unicam.cs.CityTourNet.model.utente.TuristaAutenticato;
+import it.unicam.cs.CityTourNet.model.utente.*;
 import it.unicam.cs.CityTourNet.repositories.ContenutoRepository;
 import it.unicam.cs.CityTourNet.repositories.NotificaRepository;
 import it.unicam.cs.CityTourNet.repositories.UtenteRepository;
@@ -30,29 +27,37 @@ public class AuthHandler {
         this.utenteRepository = utenteRepository;
         this.notificaRepository = notificaRepository;
     }
+    public boolean isGestore(String username, String password){
+        return this.utenteRepository.getReferenceById(username).getPassword().equals(password);
+    }
 
-    public List<TuristaAutenticato> getTuristiAutenticatiInScadenza(){
+    private List<TuristaAutenticato> getTuristiAutenticatiInScadenza(){
         return this.getTuristiAutenticati()
                 .stream()
                 .filter(t -> t.getDataInizioAutenticazione().until(LocalDateTime.now(), ChronoUnit.DAYS) > 30)
                 .toList();
     }
 
-    public List<TuristaAutenticato> getTuristiAutenticati(){
+    private List<TuristaAutenticato> getTuristiAutenticati(){
         return this.utenteRepository.findByTipoUtente("TuristaAutenticato")
                 .stream()
                 .map(t -> (TuristaAutenticato) t)
                 .toList();
     }
 
-    public List<ContributorAutorizzato> getContributorAutorizzati(){
+    private List<ContributorAutorizzato> getContributorAutorizzati(){
         return this.utenteRepository.findByTipoUtente("ContributorAutorizzato")
                 .stream()
                 .map(t -> (ContributorAutorizzato) t)
                 .toList();
     }
 
-    public boolean removeAutenticazione(){
+    private GestoreDellaPiattaforma getGestore() {
+        return (GestoreDellaPiattaforma) this.utenteRepository.findByTipoUtente("GestoreDellaPiattaforma")
+                .stream().findFirst().orElse(null);
+    }
+
+    public boolean eliminaAutenticazioni(){
         List<TuristaAutenticato> turistiAutenticatiInScadenza = this.getTuristiAutenticatiInScadenza();
         List<Turista> listaTuristi = turistiAutenticatiInScadenza
                 .stream()
@@ -63,8 +68,9 @@ public class AuthHandler {
         return true;
     }
 
-    public boolean richiediAutenticazione(String username, int puntiPerAutenticazione){
+    public boolean richiediAutenticazione(String username){
         Turista turista = (Turista) this.utenteRepository.getReferenceById(username);
+        int puntiPerAutenticazione = this.getGestore().getPuntiPerAutenticazione();
         if(turista.getPunti() >= puntiPerAutenticazione){
             TuristaAutenticato turistaAutenticato = new TuristaAutenticato(turista.getUsername(),
                     turista.getEmail(),turista.getPassword());
@@ -76,9 +82,10 @@ public class AuthHandler {
         return false;
     }
 
-    public boolean richiediAutorizzazione(String username, int contenutiMinimiPerAutorizzazione){
+    public boolean richiediAutorizzazione(String username){
         Contributor contributor = (Contributor) this.utenteRepository.getReferenceById(username);
         List<Contenuto> contenutiCaricati = this.contenutoRepository.findContenutiByUsernameAutore(username);
+        int contenutiMinimiPerAutorizzazione = this.getGestore().getPuntiPerAutenticazione();
         if(contenutiCaricati.size() >= contenutiMinimiPerAutorizzazione){
             ContributorAutorizzato contributorAutorizzato = new ContributorAutorizzato(contributor.getUsername(),
                     contributor.getEmail(),contributor.getPassword());
@@ -89,16 +96,16 @@ public class AuthHandler {
         return false;
     }
 
-    public boolean gestisciAutorizzazione(){
+    public boolean gestisciAutorizzazioni(){
         this.getContributorAutorizzati()
                 .stream()
                 .filter( c -> this.contenutoRepository.findContenutiByUsernameAutore(c.getUsername()).isEmpty())
-                .map(c -> this.controllaContenutoContributorAutorizzato(c.getUsername())
+                .map(c -> this.gestisciEsitiNegativi(c.getUsername())
                 );
             return true;
     }
 
-    public boolean controllaContenutoContributorAutorizzato(String username){
+    public boolean gestisciEsitiNegativi(String username){
         ContributorAutorizzato daControllare =
                 (ContributorAutorizzato) this.utenteRepository.getReferenceById(username);
         daControllare.setEsitiNegativi(daControllare.getEsitiNegativi()+1);
@@ -108,6 +115,8 @@ public class AuthHandler {
             this.utenteRepository.delete(daControllare);
             this.utenteRepository.saveAndFlush(nuovoContributor);
             return true;
+        } else {
+            this.utenteRepository.saveAndFlush(daControllare);
         }
         return false;
     }

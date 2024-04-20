@@ -19,7 +19,7 @@ public class CompraVenditaController {
     }
 
     @GetMapping("/prodotto")
-    public ResponseEntity<Object> getProdottoGadget(Long ID) {
+    public ResponseEntity<Object> getProdottoGadget(@RequestParam long ID) {
         return new ResponseEntity<>(this.compraVenditaHandler.getProdottoGadget(ID), HttpStatus.OK);
     }
 
@@ -54,7 +54,5 @@ public class CompraVenditaController {
         this.compraVenditaHandler.removeProdottoGadget(ID);
         return new ResponseEntity<>("Prodotto eliminato con successo", HttpStatus.OK);
     }
-
-
 
 }

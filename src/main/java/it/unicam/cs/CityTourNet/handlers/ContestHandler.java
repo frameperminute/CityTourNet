@@ -39,10 +39,15 @@ public class ContestHandler {
         this.contenutoContestRepository = contenutoContestRepository;
     }
 
+    public boolean isAttivo() {
+        return this.isAttivo;
+    }
+
     public boolean selezionaOpzioneItinerario(){
         this.isContestItinerario = true;
         this.isContestPOI = false;
         return true;
+
     }
 
     public boolean selezionaOpzionePOI(){
@@ -51,7 +56,7 @@ public class ContestHandler {
         return true;
     }
 
-    public boolean selezionaOpzioneWithTuristi(){
+    public boolean selezionaOpzioneTuristi(){
         this.isContestWithTuristi = !this.isContestWithTuristi;
         return this.isContestWithTuristi;
     }
@@ -61,39 +66,45 @@ public class ContestHandler {
         return this.isContestWithTuristiAutenticati;
     }
 
-    public boolean selezionaOpzioneWithContributors(){
+    public boolean selezionaOpzioneContributors(){
         this.isContestWithContributors = !this.isContestWithContributors;
         return this.isContestWithContributors;
     }
 
     public boolean creaContest(LocalDateTime dataFine, String tematica, String username){
-        if(!this.isAttivo){
+        if(!this.isAttivo && this.controllaOpzioni()){
             this.isAttivo = true;
             this.contest = new ConcreteContest(dataFine, tematica);
-            this.attivaOpzioni();
             this.inviaInformazioniContest(username);
             return true;
         }
         return false;
     }
 
-    private boolean attivaOpzioni(){
+    private boolean controllaOpzioni(){
+        boolean isContenutoAttivo = false;
+        boolean isPartecipantiAttivo = false;
         if(this.isContestItinerario){
             this.contest = new ItinerarioDecorator(this.contest);
+            isContenutoAttivo = true;
         }
         if(this.isContestPOI){
             this.contest = new POIDecorator(this.contest);
+            isContenutoAttivo = true;
         }
         if(this.isContestWithTuristi){
             this.contest = new TuristaDecorator(this.contest);
+            isPartecipantiAttivo = true;
         }
         if(this.isContestWithTuristiAutenticati){
             this.contest = new TuristaAutenticatoDecorator(this.contest);
+            isPartecipantiAttivo = true;
         }
         if(this.isContestWithContributors){
             this.contest = new ContributorDecorator(this.contest);
+            isContenutoAttivo = true;
         }
-        return true;
+        return isContenutoAttivo && isPartecipantiAttivo;
     }
 
     private boolean inviaInformazioniContest(String username){
@@ -104,7 +115,7 @@ public class ContestHandler {
         if(this.isContestPOI){
             testo += "POI.\n";
         }
-        testo += "Se vuoi partecipare, rispondi con ('SI')";
+        testo += "Se vuoi partecipare, rispondi con ('SI') entro 24 ore";
         String testoDefinitivo = testo;
         if(this.isContestWithTuristi) {
             this.utenteRepository.findByTipoUtente("Turista")
@@ -131,8 +142,7 @@ public class ContestHandler {
     }
 
     public boolean addPartecipanti(String username) {
-        if (this.isAttivo) {
-            List<Notifica> notifichePartecipanti = this.getNotifichePartecipanti(username);
+        List<Notifica> notifichePartecipanti = this.getNotifichePartecipanti(username);
             if(notifichePartecipanti.size() >= 5) {
                 if (this.isContestWithTuristi) {
                     notifichePartecipanti.stream()
@@ -155,7 +165,7 @@ public class ContestHandler {
                 this.notificaRepository.deleteAll(notifichePartecipanti);
                 return true;
             }
-        }
+        this.terminaContest(username);
         return false;
     }
 
@@ -167,28 +177,36 @@ public class ContestHandler {
                 .toList();
         }
 
-    public boolean addPOIPerContest(POI poi) {
+    public boolean caricaPOIPerContest(POI poi) {
         if(this.contenutoContestRepository.findByUsernameAutore(poi.getUsernameAutore()).isEmpty()) {
             this.contenutoContestRepository.save(poi);
+            return true;
         }
-        return true;
+        return false;
     }
 
-    public boolean addItinerarioPerContest(Itinerario itinerario) {
+    public boolean caricaItinerarioPerContest(Itinerario itinerario) {
         if(this.contenutoContestRepository.findByUsernameAutore(itinerario.getUsernameAutore()).isEmpty()) {
             this.contenutoContestRepository.save(itinerario);
+            return true;
         }
+        return false;
+    }
+
+    public boolean eliminaContenutoPerContest(String username) {
+        this.contenutoContestRepository
+                .deleteAllInBatch(this.contenutoContestRepository.findByUsernameAutore(username));
         return true;
     }
 
-    public List<POI> getPOIS(){
+    public List<POI> getPOIsPartecipanti(){
         return this.contenutoContestRepository.findAll().stream()
                 .filter(c -> c.getTipoContenuto().equals("POI"))
                 .map(c -> (POI) c)
                 .toList();
     }
 
-    public List<Itinerario> getItinerari(){
+    public List<Itinerario> getItinerariPartecipanti(){
         return this.contenutoContestRepository.findAll().stream()
                 .filter(c -> c.getTipoContenuto().equals("Itinerario"))
                 .map(c -> (Itinerario) c)
@@ -203,7 +221,13 @@ public class ContestHandler {
         return true;
     }
 
-    public boolean premiaVincitore(String usernameAnimatore, int puntiPremio){
+    private GestoreDellaPiattaforma getGestore() {
+        return (GestoreDellaPiattaforma) this.utenteRepository.findByTipoUtente("GestoreDellaPiattaforma")
+                .stream().findFirst().orElse(null);
+    }
+
+    public boolean premiaVincitore(String usernameAnimatore){
+        int puntiPremio = this.getGestore().getPuntiPerAutenticazione();
         if(this.utenteVincitore instanceof Turista){
             TuristaAutenticato turistaAutenticato = new TuristaAutenticato(this.utenteVincitore.getUsername(),
                     this.utenteVincitore.getEmail(),this.utenteVincitore.getPassword());
@@ -221,24 +245,25 @@ public class ContestHandler {
             this.utenteRepository.delete(this.utenteVincitore);
             this.utenteRepository.saveAndFlush(contributorAutorizzato);
         }
+        this.terminaContest(usernameAnimatore);
         this.notificaRepository.saveAndFlush(new Notifica(usernameAnimatore, this.utenteVincitore.getUsername(),
                 "Complimenti " + this.utenteVincitore.getUsername() + " hai vinto il contest!"));
         return true;
     }
 
-    public boolean terminaContest(String usernameAnimatore){
+    private boolean terminaContest(String usernameAnimatore){
         this.isAttivo = false;
         this.isContestItinerario = false;
         this.isContestPOI = false;
         this.isContestWithTuristi = false;
         this.isContestWithTuristiAutenticati = false;
         this.isContestWithContributors = false;
-        this.contenutoContestRepository.deleteAll();
+        this.utenteVincitore = null;
+        this.contest = null;
+        this.contenutoContestRepository.deleteAllInBatch();
         this.notificaRepository.deleteAllInBatch(this.notificaRepository.findAll()
                 .stream().filter(n -> n.getUsernameMittente().equals(usernameAnimatore)).toList());
         return true;
     }
-
-
 
 }

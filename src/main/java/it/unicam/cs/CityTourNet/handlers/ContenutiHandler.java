@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class ContenutoHandler {
+public class ContenutiHandler {
 
     private final ContenutoRepository contenutoRepository;
     private final NotificaRepository notificaRepository;
@@ -21,7 +21,7 @@ public class ContenutoHandler {
     private final ContenutoContestRepository contenutoContestRepository;
 
     @Autowired
-    public ContenutoHandler(ContenutoRepository contenutoRepository, NotificaRepository notificaRepository,
+    public ContenutiHandler(ContenutoRepository contenutoRepository, NotificaRepository notificaRepository,
                             UtenteRepository utenteRepository,
                             ContenutoInPendingRepository contenutoInPendingRepository,
                             ContenutoContestRepository contenutoContestRepository) {
@@ -98,9 +98,13 @@ public class ContenutoHandler {
                 .toList();
     }
 
-    public Utente getUtente(long id){
+    public Utente getUtenteByIdContenuto(long id){
         return this.utenteRepository
                 .getReferenceById(this.contenutoRepository.getReferenceById(id).getUsernameAutore());
+    }
+
+    public Utente getUtenteByUsername(String username) {
+        return this.utenteRepository.getReferenceById(username);
     }
 
     public boolean removeContenuto(long ID){

@@ -18,7 +18,7 @@ public class AuthController {
     }
 
     @PutMapping("/richiediAutenticazione")
-    public ResponseEntity<Object> richiediAutenticazione(@RequestParam String username) {
+    public ResponseEntity<Object> richiediAutenticazione(@RequestBody String username) {
         if(this.authHandler.richiediAutenticazione(username)) {
             return new ResponseEntity<>("Autenticazione eseguita con successo", HttpStatus.OK);
         }
@@ -27,7 +27,7 @@ public class AuthController {
     }
 
     @PutMapping("/richiediAutorizzazione")
-    public ResponseEntity<Object> richiediAutorizzazione(@RequestParam String username) {
+    public ResponseEntity<Object> richiediAutorizzazione(@RequestBody String username) {
         if(this.authHandler.richiediAutorizzazione(username)) {
             return new ResponseEntity<>("Autorizzazione eseguita con successo", HttpStatus.OK);
         }
@@ -36,9 +36,9 @@ public class AuthController {
     }
 
     @PutMapping("/eliminaAutenticazione")
-    public ResponseEntity<Object> eliminaAutenticazioni(@RequestParam String username,
-                                                        @RequestParam String password,
-                                                        @RequestParam String usernameTuristaAut) {
+    public ResponseEntity<Object> eliminaAutenticazioni(@RequestBody String username,
+                                                        @RequestBody String password,
+                                                        @RequestBody String usernameTuristaAut) {
         if(this.authHandler.isGestore(username, password)) {
             this.authHandler.eliminaAutenticazioni();
             return new ResponseEntity<>("Autenticazioni eliminate", HttpStatus.OK);
@@ -48,8 +48,8 @@ public class AuthController {
     }
 
     @PutMapping("/gestisciAutorizzazioni")
-    public ResponseEntity<Object> gestisciAutorizzazioni(@RequestParam String username,
-                                                         @RequestParam String password) {
+    public ResponseEntity<Object> gestisciAutorizzazioni(@RequestBody String username,
+                                                         @RequestBody String password) {
         if(this.authHandler.isGestore(username, password)) {
             this.authHandler.gestisciAutorizzazioni();
             return new ResponseEntity<>("Autorizzazioni gestite", HttpStatus.OK);
@@ -59,9 +59,9 @@ public class AuthController {
     }
 
     @PostMapping("/gestisciEsitiNegativi")
-    public ResponseEntity<Object> gestisciEsitiNegativi(@RequestParam String username,
-                                                         @RequestParam String password,
-                                                        @RequestParam String usernameContributorAut) {
+    public ResponseEntity<Object> gestisciEsitiNegativi(@RequestBody String username,
+                                                        @RequestBody String password,
+                                                        @RequestBody String usernameContributorAut) {
         if(this.authHandler.isGestore(username, password)) {
             this.authHandler.gestisciEsitiNegativi(usernameContributorAut);
             return new ResponseEntity<>("Esiti negativi gestiti", HttpStatus.OK);

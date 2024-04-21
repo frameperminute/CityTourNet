@@ -8,6 +8,7 @@ import it.unicam.cs.CityTourNet.model.utente.ContributorAutorizzato;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -50,14 +51,14 @@ public class ContenutiController {
     }
 
     @GetMapping("/contenutiAutore")
-    public ResponseEntity<Object> visualizzaContenutiByAutore(@RequestParam String usernameAutore){
+    public ResponseEntity<Object> visualizzaContenutiByAutore(@RequestBody String usernameAutore){
         return new ResponseEntity<>(this.contenutiHandler.getContenutiByAutore(usernameAutore), HttpStatus.OK);
     }
 
-    @PostMapping("/caricaPOI")
-    public ResponseEntity<Object> caricaPOI(@RequestParam String nome, @RequestParam String descrizione,
-                                            @RequestParam String usernameAutore,
-                                            @RequestParam ("file") MultipartFile multimedia) {
+    @PostMapping(value = "/caricaPOI", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Object> caricaPOI(@RequestBody String nome, @RequestBody String descrizione,
+                                            @RequestBody String usernameAutore,
+                                            @RequestBody MultipartFile multimedia) {
         if (multimedia.isEmpty()) {
             return new ResponseEntity<>("File non fornito", HttpStatus.BAD_REQUEST);
         }
@@ -92,11 +93,11 @@ public class ContenutiController {
     }
 
     @PostMapping("/caricaItinerario")
-    public ResponseEntity<Object> caricaItinerario(@RequestParam String nome, @RequestParam String descrizione,
-                                                   @RequestParam String usernameAutore,
-                                                   @RequestParam List<Long> POIsPerItinerario,
-                                                   @RequestParam Difficolta difficolta, @RequestParam int ore,
-                                                   @RequestParam int minuti) {
+    public ResponseEntity<Object> caricaItinerario(@RequestBody String nome, @RequestBody String descrizione,
+                                                   @RequestBody String usernameAutore,
+                                                   @RequestBody List<Long> POIsPerItinerario,
+                                                   @RequestBody Difficolta difficolta, @RequestBody int ore,
+                                                   @RequestBody int minuti) {
         List<POI> POIsDaInserire = POIsPerItinerario.stream().map(this.contenutiHandler::getPOIByID).toList();
         if(POIsDaInserire.size() == POIsPerItinerario.size()) {
             if(this.contenutiHandler.getUtenteByUsername(usernameAutore) instanceof ContributorAutorizzato) {
@@ -112,7 +113,8 @@ public class ContenutiController {
     }
 
     @DeleteMapping("/cancellaContenuto")
-    public ResponseEntity<Object> deleteContenuto(@RequestParam long ID) {
+    public ResponseEntity<Object> deleteContenuto(@RequestBody long ID) {
+        this.contenutiHandler.removeContenuto(ID);
         this.contenutiHandler.removeContenuto(ID);
         return new ResponseEntity<>("Contenuto eliminato", HttpStatus.OK);
     }

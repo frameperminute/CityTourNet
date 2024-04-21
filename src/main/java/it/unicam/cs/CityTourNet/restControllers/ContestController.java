@@ -8,6 +8,7 @@ import it.unicam.cs.CityTourNet.model.contenuto.POI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,10 +38,10 @@ public class ContestController {
         this.contenutiHandler = contenutiHandler;
     }
 
-    @PostMapping("/caricaPOI")
-    public ResponseEntity<Object> caricaPOI(@RequestParam String nome, @RequestParam String descrizione,
-                                            @RequestParam String usernameAutore,
-                                            @RequestParam ("file") MultipartFile multimedia) {
+    @PostMapping(value = "/caricaPOI", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Object> caricaPOI(@RequestBody String nome, @RequestBody String descrizione,
+                                            @RequestBody String usernameAutore,
+                                            @RequestBody MultipartFile multimedia) {
         if (multimedia.isEmpty()) {
             return new ResponseEntity<>("File non fornito", HttpStatus.BAD_REQUEST);
         }
@@ -76,11 +77,11 @@ public class ContestController {
     }
 
     @PostMapping("/caricaItinerario")
-    public ResponseEntity<Object> caricaItinerario(@RequestParam String nome, @RequestParam String descrizione,
-                                                   @RequestParam String usernameAutore,
-                                                   @RequestParam List<Long> POIsPerItinerario,
-                                                   @RequestParam Difficolta difficolta, @RequestParam int ore,
-                                                   @RequestParam int minuti) {
+    public ResponseEntity<Object> caricaItinerario(@RequestBody String nome, @RequestBody String descrizione,
+                                                   @RequestBody String usernameAutore,
+                                                   @RequestBody List<Long> POIsPerItinerario,
+                                                   @RequestBody Difficolta difficolta, @RequestBody int ore,
+                                                   @RequestBody int minuti) {
         List<POI> POIsDaInserire = POIsPerItinerario.stream().map(this.contenutiHandler::getPOIByID).toList();
         if(POIsDaInserire.size() == POIsPerItinerario.size()) {
             Itinerario daAggiungere = new Itinerario(nome, descrizione, usernameAutore,
@@ -96,8 +97,8 @@ public class ContestController {
     }
 
     @DeleteMapping("/eliminaContenutoContest")
-    public ResponseEntity<Object> eliminaContenutoContest(@RequestParam String username,
-                                                           @RequestParam String password) {
+    public ResponseEntity<Object> eliminaContenutoContest(@RequestBody String username,
+                                                           @RequestBody String password) {
         if(this.contenutiHandler.getUtenteByUsername(username).getPassword().equals(password)) {
             this.contestHandler.eliminaContenutoPerContest(username);
             return new ResponseEntity<>("Contenuto di: " + username + " eliminato", HttpStatus.OK);
@@ -106,8 +107,8 @@ public class ContestController {
     }
 
     @PostMapping("/creaContest")
-    public ResponseEntity<Object> creaContest(@RequestParam LocalDateTime dataFine, @RequestParam String tematica,
-                                              @RequestParam String username, @RequestParam String password) {
+    public ResponseEntity<Object> creaContest(@RequestBody LocalDateTime dataFine, @RequestBody String tematica,
+                                              @RequestBody String username, @RequestBody String password) {
         if(this.contenutiHandler.getUtenteByUsername(username).getPassword().equals(password)) {
             if(!this.contestHandler.creaContest(dataFine,tematica,username)) {
                 return new ResponseEntity<>("C'e' gia' un contest attivo", HttpStatus.BAD_REQUEST);
@@ -190,8 +191,8 @@ public class ContestController {
     }
 
     @PostMapping("/aggiungiPartecipanti")
-    public ResponseEntity<Object> aggiungiPartecipanti(@RequestParam String username,
-                                                       @RequestParam String password) {
+    public ResponseEntity<Object> aggiungiPartecipanti(@RequestBody String username,
+                                                       @RequestBody String password) {
         if(this.contenutiHandler.getUtenteByUsername(username).getPassword().equals(password)) {
             if (this.contestHandler.isAttivo()) {
                 if(this.contestHandler.addPartecipanti(username)) {
@@ -206,10 +207,10 @@ public class ContestController {
     }
 
     @PostMapping("/inviaUtenteVincitore")
-    public ResponseEntity<Object> inviaUtenteVincitore(@RequestParam String usernameAnimatore,
-                                                       @RequestParam String passwordAnimatore,
-                                                       @RequestParam String usernameVincitore,
-                                                       @RequestParam String usernameGestore) {
+    public ResponseEntity<Object> inviaUtenteVincitore(@RequestBody String usernameAnimatore,
+                                                       @RequestBody String passwordAnimatore,
+                                                       @RequestBody String usernameVincitore,
+                                                       @RequestBody String usernameGestore) {
         if(this.contenutiHandler.getUtenteByUsername(usernameAnimatore).getPassword().equals(passwordAnimatore)) {
             if (this.contestHandler.isAttivo()) {
                 this.contestHandler.inviaUtenteVincitore(usernameVincitore, usernameAnimatore, usernameGestore);
@@ -222,10 +223,9 @@ public class ContestController {
     }
 
     @PostMapping("/premiaVincitore")
-    public ResponseEntity<Object> premiaVincitore(@RequestParam String usernameAnimatore,
-                                                       @RequestParam String passwordAnimatore,
-                                                       @RequestParam String usernameVincitore,
-                                                       @RequestParam String usernameGestore) {
+    public ResponseEntity<Object> premiaVincitore(@RequestBody String usernameAnimatore,
+                                                       @RequestBody String passwordAnimatore,
+                                                       @RequestBody String usernameVincitore) {
         if(this.contenutiHandler.getUtenteByUsername(usernameAnimatore).getPassword().equals(passwordAnimatore)) {
             if (this.contestHandler.isAttivo()) {
                 this.contestHandler.premiaVincitore(usernameAnimatore);

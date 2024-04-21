@@ -1,10 +1,18 @@
 package it.unicam.cs.CityTourNet.model.contest;
 
 import it.unicam.cs.CityTourNet.model.utente.Utente;
+import jakarta.persistence.*;
+import lombok.NoArgsConstructor;
 
+@Entity
+@NoArgsConstructor(force = true)
+@DiscriminatorValue("ContestDecorator")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "tipo_decorator", discriminatorType = DiscriminatorType.STRING)
+public class ContestDecorator extends Contest {
 
-public class ContestDecorator implements Contest {
-
+    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "contest_id", referencedColumnName = "ID")
     private final Contest contest;
 
     public ContestDecorator(Contest contest) {
@@ -31,4 +39,5 @@ public class ContestDecorator implements Contest {
     public String getTempoResiduo() {
         return this.contest.getTempoResiduo();
     }
+
 }

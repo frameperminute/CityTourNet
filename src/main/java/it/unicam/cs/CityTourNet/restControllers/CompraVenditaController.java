@@ -19,7 +19,7 @@ public class CompraVenditaController {
     }
 
     @GetMapping("/prodotto")
-    public ResponseEntity<Object> getProdottoGadget(@RequestParam long ID) {
+    public ResponseEntity<Object> getProdottoGadget(@RequestBody long ID) {
         return new ResponseEntity<>(this.compraVenditaHandler.getProdottoGadget(ID), HttpStatus.OK);
     }
 
@@ -29,8 +29,8 @@ public class CompraVenditaController {
     }
 
     @PutMapping("/acquista")
-    public ResponseEntity<Object> acquistaProdotto(@RequestParam long ID,@RequestParam int numPezzi,
-                                                   @RequestParam String username,@RequestParam String indirizzo){
+    public ResponseEntity<Object> acquistaProdotto(@RequestBody long ID,@RequestBody int numPezzi,
+                                                   @RequestBody String username,@RequestBody String indirizzo){
         if(this.compraVenditaHandler.gestisciAcquistoProdottoGadget(ID, numPezzi, username, indirizzo)) {
             return new ResponseEntity<>("L'acquisto e' stato effettuato con successo", HttpStatus.OK);
         } else {
@@ -39,7 +39,7 @@ public class CompraVenditaController {
     }
 
     @GetMapping("/punti")
-    public ResponseEntity<Object> getPuntiPersonali(@RequestParam String username) {
+    public ResponseEntity<Object> getPuntiPersonali(@RequestBody String username) {
         return new ResponseEntity<>(this.compraVenditaHandler.getPuntiUtente(username), HttpStatus.OK);
     }
 
@@ -50,7 +50,7 @@ public class CompraVenditaController {
     }
 
     @DeleteMapping("/elimina")
-    public ResponseEntity<Object> eliminaProdottoGadget(@RequestParam long ID){
+    public ResponseEntity<Object> eliminaProdottoGadget(@RequestBody long ID){
         this.compraVenditaHandler.removeProdottoGadget(ID);
         return new ResponseEntity<>("Prodotto eliminato con successo", HttpStatus.OK);
     }

@@ -1,19 +1,30 @@
 package it.unicam.cs.CityTourNet.model.contest;
 
 import it.unicam.cs.CityTourNet.model.utente.Utente;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ManyToMany;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-public class ConcreteContest implements Contest {
+@Entity
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorValue("ConcreteContest")
+@NoArgsConstructor(force = true)
+public class ConcreteContest extends Contest {
     @ManyToMany(fetch = FetchType.EAGER)
     private List<Utente> partecipanti;
     private final LocalDateTime dataFine;
 
     private final String tematica;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private long ID;
+    @Column(name = "tipo_contest", insertable = false, updatable = false)
+    protected String tipoContest;
 
     public ConcreteContest (LocalDateTime dataFine, String tematica){
         this.dataFine = dataFine;
@@ -47,5 +58,6 @@ public class ConcreteContest implements Contest {
         return "Il contest terminera' tra: \n" + giorniResidui + " giorni, "
                 + oreResidue + " ore e " + minutiResidui + " minuti";
     }
+
 }
 

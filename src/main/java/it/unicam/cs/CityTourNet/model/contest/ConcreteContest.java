@@ -1,53 +1,36 @@
 package it.unicam.cs.CityTourNet.model.contest;
 
-import it.unicam.cs.CityTourNet.model.utente.Utente;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorValue("ConcreteContest")
 @NoArgsConstructor(force = true)
+@Getter
 public class ConcreteContest extends Contest {
-    @ManyToMany(fetch = FetchType.EAGER)
-    private List<Utente> partecipanti;
-    private final LocalDateTime dataFine;
+    protected String usernameAutore;
 
-    private final String tematica;
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long ID;
-    @Column(name = "tipo_contest", insertable = false, updatable = false)
-    protected String tipoContest;
+    protected LocalDate dataFine;
 
-    public ConcreteContest (LocalDateTime dataFine, String tematica){
-        this.dataFine = dataFine;
+    protected String tematica;
+
+    public ConcreteContest(String dataFine, String tematica, String usernameAutore) {
+        this.dataFine = LocalDate.parse(dataFine, DateTimeFormatter.ofPattern("dd-MM-yyyy"));
         this.tematica = tematica;
-    }
-
-    @Override
-    public Utente getPartecipante(String username) {
-        return this.partecipanti.stream()
-                .filter(x -> x.getUsername().equals(username))
-                .findFirst().orElse(null);
-    }
-
-    @Override
-    public boolean addPartecipante(Utente partecipante) {
-        return this.partecipanti.add(partecipante);
+        this.usernameAutore = usernameAutore;
     }
 
     @Override
     public String getInfoContest() {
         return "Il contest presenta la seguente tematica: \n" + this.tematica + "\n" +
-                "e termina il: \n" + this.dataFine.getDayOfMonth()+"/"+this.dataFine.getMonth() +
-                "alle ore: \n" +  this.dataFine.getHour()+":"+this.dataFine.getMinute();
+                "e termina il: \n" + this.dataFine.getDayOfMonth()+"/"+this.dataFine.getMonthValue();
     }
 
     @Override

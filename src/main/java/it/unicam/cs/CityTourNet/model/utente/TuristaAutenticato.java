@@ -19,6 +19,7 @@ public class TuristaAutenticato extends Utente implements Acquirente {
 
     public TuristaAutenticato(String username, String email, String password) {
         super(username, email, password);
+        this.punti = 0;
         this.dataInizioAutenticazione = LocalDateTime.now();
     }
 }

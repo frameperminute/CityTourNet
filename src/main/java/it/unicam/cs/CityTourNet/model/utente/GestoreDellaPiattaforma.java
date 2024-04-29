@@ -18,5 +18,7 @@ public class GestoreDellaPiattaforma extends Utente{
 
     public GestoreDellaPiattaforma(String username, String email, String password) {
         super(username, email, password);
+        this.puntiPerAutenticazione = 30;
+        this.contenutiMinimiPerAutorizzazione = 50;
     }
 }

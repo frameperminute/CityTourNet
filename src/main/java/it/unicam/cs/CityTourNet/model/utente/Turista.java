@@ -16,5 +16,6 @@ public class Turista extends Utente implements Acquirente{
     private int punti;
     public Turista(String username, String email, String password) {
         super(username, email, password);
+        this.punti = 0;
     }
 }

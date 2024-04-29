@@ -3,117 +3,115 @@ package it.unicam.cs.CityTourNet.handlers;
 import it.unicam.cs.CityTourNet.model.contenuto.Contenuto;
 import it.unicam.cs.CityTourNet.model.contenuto.Itinerario;
 import it.unicam.cs.CityTourNet.model.contenuto.POI;
-import it.unicam.cs.CityTourNet.model.contenuto.ProdottoGadget;
-import it.unicam.cs.CityTourNet.model.utente.Utente;
-import it.unicam.cs.CityTourNet.repositories.*;
+import it.unicam.cs.CityTourNet.repositories.ContenutoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.util.List;
 
 @Service
 public class ContenutiHandler {
 
     private final ContenutoRepository contenutoRepository;
-    private final NotificaRepository notificaRepository;
-    private final UtenteRepository utenteRepository;
-    private final ContenutoInPendingRepository contenutoInPendingRepository;
-    private final ContenutoContestRepository contenutoContestRepository;
 
     @Autowired
-    public ContenutiHandler(ContenutoRepository contenutoRepository, NotificaRepository notificaRepository,
-                            UtenteRepository utenteRepository,
-                            ContenutoInPendingRepository contenutoInPendingRepository,
-                            ContenutoContestRepository contenutoContestRepository) {
+    public ContenutiHandler(ContenutoRepository contenutoRepository) {
         this.contenutoRepository = contenutoRepository;
-        this.notificaRepository = notificaRepository;
-        this.utenteRepository = utenteRepository;
-        this.contenutoInPendingRepository = contenutoInPendingRepository;
-        this.contenutoContestRepository = contenutoContestRepository;
     }
 
     public boolean addPOI(POI poi) {
-        this.contenutoRepository.save(poi);
+        poi.setDefinitive(true);
+        this.contenutoRepository.saveAndFlush(poi);
         return true;
     }
 
     public boolean addItinerario(Itinerario itinerario) {
-        this.contenutoRepository.save(itinerario);
+        itinerario.setDefinitive(true);
+        this.contenutoRepository.saveAndFlush(itinerario);
         return true;
     }
 
     public boolean addPOIInPending(POI poi) {
-        this.contenutoInPendingRepository.save(poi);
+        poi.setInPending(true);
+        this.contenutoRepository.saveAndFlush(poi);
         return true;
     }
 
     public boolean addItinerarioInPending(Itinerario itinerario) {
-        this.contenutoInPendingRepository.save(itinerario);
+        itinerario.setInPending(true);
+        this.contenutoRepository.saveAndFlush(itinerario);
         return true;
     }
 
     public List<Contenuto> getContenutiByAutore(String username){
-        return this.contenutoRepository.findContenutiByUsernameAutore(username);
+        return this.contenutoRepository.findContenutiByUsernameAutore(username)
+                .stream().filter(Contenuto::isDefinitive).toList();
     }
 
     public List<Contenuto> getContenutiInPendingByAutore(String username){
-        return this.contenutoInPendingRepository.findContenutiByUsernameAutore(username);
+        return this.contenutoRepository.findContenutiByUsernameAutore(username)
+                .stream().filter(Contenuto::isInPending).toList();
     }
 
     public POI getPOIByID(long id){
-          return (POI) this.contenutoRepository.getReferenceById(id);
+        if(this.contenutoRepository.existsById(id)) {
+            return (POI) this.contenutoRepository.findById(id).get();
+        }
+        return null;
     }
 
-    public Itinerario getItinerarioByID(long id){
-        return (Itinerario) this.contenutoRepository.getReferenceById(id);
+    public List<POI> getPOIsInPending(){
+        return this.contenutoRepository.findAll().stream()
+                .filter(c -> c.getTipoContenuto().equals("POI") && c.isInPending())
+                .map(c -> (POI) c)
+                .toList();
     }
 
-    public ProdottoGadget getProdottoGadgetByID(long id){
-        return (ProdottoGadget) this.contenutoRepository.getReferenceById(id);
-    }
-
-    public POI getPOIInPendingByID(long id){
-        return (POI) this.contenutoInPendingRepository.getReferenceById(id);
-    }
-
-    public Itinerario getItinerarioInPendingByID(long id){
-        return (Itinerario) this.contenutoInPendingRepository.getReferenceById(id);
-    }
-
-    public List<Contenuto> getContenutiInPending(){
-        return this.contenutoInPendingRepository.findAll();
+    public List<Itinerario> getItinerariInPending(){
+        return this.contenutoRepository.findAll().stream()
+                .filter(c -> c.getTipoContenuto().equals("Itinerario") && c.isInPending())
+                .map(c -> (Itinerario) c)
+                .toList();
     }
 
     public List<POI> getPOIS(){
         return this.contenutoRepository.findAll().stream()
-                .filter(c -> c.getTipoContenuto().equals("POI"))
+                .filter(c -> c.getTipoContenuto().equals("POI") && c.isDefinitive())
                 .map(c -> (POI) c)
                 .toList();
     }
 
     public List<Itinerario> getItinerari(){
         return this.contenutoRepository.findAll().stream()
-                .filter(c -> c.getTipoContenuto().equals("Itinerario"))
+                .filter(c -> c.getTipoContenuto().equals("Itinerario") && c.isDefinitive())
                 .map(c -> (Itinerario) c)
                 .toList();
     }
 
-    public Utente getUtenteByIdContenuto(long id){
-        return this.utenteRepository
-                .getReferenceById(this.contenutoRepository.getReferenceById(id).getUsernameAutore());
-    }
 
-    public Utente getUtenteByUsername(String username) {
-        return this.utenteRepository.getReferenceById(username);
-    }
-
-    public boolean removeContenuto(long ID){
-        this.contenutoRepository.deleteById(ID);
+    public boolean removeContenuto(long id){
+        if(this.contenutoRepository.existsById(id)) {
+            Contenuto daEliminare = this.contenutoRepository.findById(id).get();
+            if(daEliminare instanceof POI) {
+                File fileDaCancellare = new File(((POI) daEliminare).getFilepath());
+                if (fileDaCancellare.exists()) {
+                    fileDaCancellare.delete();
+                }
+            }
+            this.contenutoRepository.deleteById(id);
+        }
         return true;
     }
 
-
-
-
-
+    public boolean caricaDefinitivamente(long id){
+        if(this.contenutoRepository.existsById(id)) {
+            Contenuto definitivo = this.contenutoRepository.findById(id).get();
+            definitivo.setDefinitive(true);
+            definitivo.setInPending(false);
+            this.contenutoRepository.saveAndFlush(definitivo);
+            return true;
+        }
+        return false;
+    }
 }

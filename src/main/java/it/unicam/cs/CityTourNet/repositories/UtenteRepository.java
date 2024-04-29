@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface UtenteRepository extends JpaRepository<Utente, String> {
-    List<Utente> findByTipoUtente(String tipoUtente);
+    List<Utente> findAllByTipoUtente(String tipoUtente);
 }

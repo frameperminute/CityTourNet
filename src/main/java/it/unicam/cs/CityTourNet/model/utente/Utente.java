@@ -3,6 +3,7 @@ package it.unicam.cs.CityTourNet.model.utente;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 
 @Entity
@@ -17,15 +18,19 @@ public abstract class Utente {
     private String password;
     @Column(name = "tipo_utente", insertable = false, updatable = false)
     protected String tipoUtente;
+    @Setter
+    private boolean isLoggedIn;
 
     public Utente(String username, String email, String password) {
         this.username = username;
-        this.email = email;
-        this.password = password;
+        this.setEmail(email);
+        this.setPassword(password);
+        this.isLoggedIn = false;
     }
 
     public void setPassword(String password) {
-        if(password.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$")) {
+        if(password.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!#$%&'(),./:;?@_])" +
+                "[A-Za-z\\d!#$%&'(),./:;?@_]{8,}$")) {
             this.password = password;
         }
     }
@@ -35,7 +40,5 @@ public abstract class Utente {
             this.email = email;
         }
     }
-
-
 
 }

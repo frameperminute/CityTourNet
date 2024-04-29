@@ -6,18 +6,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.io.File;
-
 @Setter
 @Getter
 @Entity
 @NoArgsConstructor(force = true)
 @DiscriminatorValue("POI")
 public class POI extends Contenuto{
-    private File multimedia;
+    private String filepath;
 
-    public POI(String nome, String descrizione, String usernameAutore, File multimedia) {
+    public POI(String nome, String descrizione, String usernameAutore) {
         super(nome, descrizione, usernameAutore);
-        this.multimedia = multimedia;
     }
 }

@@ -1,7 +1,5 @@
 package it.unicam.cs.CityTourNet.model.contest;
 
-import it.unicam.cs.CityTourNet.model.utente.Turista;
-import it.unicam.cs.CityTourNet.model.utente.Utente;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.NoArgsConstructor;
@@ -14,11 +12,4 @@ public class TuristaDecorator extends ContestDecorator{
         super(contest);
     }
 
-    @Override
-    public boolean addPartecipante(Utente partecipante) {
-        if(partecipante instanceof Turista) {
-            super.addPartecipante(partecipante);
-        }
-        return true;
-    }
 }

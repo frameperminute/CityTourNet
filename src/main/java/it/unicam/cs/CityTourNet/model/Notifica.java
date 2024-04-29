@@ -6,21 +6,21 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+@Getter
 @Entity
 @NoArgsConstructor(force = true)
 public class Notifica {
-    @Getter
     private String usernameMittente;
-    @Getter
     private String usernameDestinatario;
     private String testo;
-    @Getter
+    @Setter
     private boolean letto;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Getter
     private long ID;
+
 
     public Notifica(String usernameMittente, String usernameDestinatario, String testo) {
         this.usernameMittente = usernameMittente;

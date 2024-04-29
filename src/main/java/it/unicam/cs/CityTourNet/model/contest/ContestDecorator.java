@@ -1,6 +1,5 @@
 package it.unicam.cs.CityTourNet.model.contest;
 
-import it.unicam.cs.CityTourNet.model.utente.Utente;
 import jakarta.persistence.*;
 import lombok.NoArgsConstructor;
 
@@ -19,25 +18,20 @@ public class ContestDecorator extends Contest {
         this.contest = contest;
     }
 
-
-    @Override
-    public Utente getPartecipante(String username) {
-        return this.contest.getPartecipante(username);
-    }
-
-    @Override
-    public boolean addPartecipante(Utente partecipante) {
-        return this.contest.addPartecipante(partecipante);
-    }
-
     @Override
     public String getInfoContest() {
-        return this.contest.getInfoContest();
+        if (this.contest != null) {
+            return this.contest.getInfoContest();
+        }
+        return null;
     }
 
     @Override
     public String getTempoResiduo() {
-        return this.contest.getTempoResiduo();
+        if (this.contest != null) {
+            return this.contest.getTempoResiduo();
+        }
+        return null;
     }
 
 }

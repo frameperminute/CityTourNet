@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 
@@ -25,10 +24,8 @@ public class ContestHandler {
     private final NotificaRepository notificaRepository;
     private final ContenutoRepository contenutoRepository;
     private Contest contest;
-    private List<String> usernamePartecipanti;
     private boolean isContestItinerario;
     private boolean isContestPOI;
-    private boolean isContestWithTuristi;
     private boolean isContestWithTuristiAutenticati;
     private boolean isContestWithContributors;
     private boolean isAttivo;
@@ -39,7 +36,6 @@ public class ContestHandler {
         this.utenteRepository = utenteRepository;
         this.notificaRepository = notificaRepository;
         this.contenutoRepository = contenutoRepository;
-        this.usernamePartecipanti = new ArrayList<>();
     }
 
     public boolean isAttivo() {
@@ -47,30 +43,32 @@ public class ContestHandler {
     }
 
     public boolean selezionaOpzioneItinerario(){
-        this.isContestItinerario = true;
-        this.isContestPOI = false;
+        if(!this.isAttivo){
+            this.isContestItinerario = true;
+            this.isContestPOI = false;
+        }
         return true;
-
     }
 
     public boolean selezionaOpzionePOI(){
-        this.isContestPOI = true;
-        this.isContestItinerario = false;
+        if(!this.isAttivo){
+            this.isContestPOI = true;
+            this.isContestItinerario = false;
+        }
         return true;
     }
 
-    public boolean selezionaOpzioneTuristi(){
-        this.isContestWithTuristi = !this.isContestWithTuristi;
-        return this.isContestWithTuristi;
-    }
-
     public boolean selezionaOpzioneTuristiAutenticati(){
-        this.isContestWithTuristiAutenticati = !this.isContestWithTuristiAutenticati;
+        if(!this.isAttivo){
+            this.isContestWithTuristiAutenticati = !this.isContestWithTuristiAutenticati;
+        }
         return this.isContestWithTuristiAutenticati;
     }
 
     public boolean selezionaOpzioneContributors(){
-        this.isContestWithContributors = !this.isContestWithContributors;
+        if(!this.isAttivo){
+            this.isContestWithContributors = !this.isContestWithContributors;
+        }
         return this.isContestWithContributors;
     }
 
@@ -79,7 +77,7 @@ public class ContestHandler {
             this.isAttivo = true;
             this.contest = contest;
             this.attivaOpzioni();
-            this.inviaInformazioniContest(contest.getUsernameAutore());
+            this.inviaInformazioniContest();
             return true;
         }
         return false;
@@ -93,9 +91,6 @@ public class ContestHandler {
         }
         if(this.isContestPOI){
             isContenutoAttivo = true;
-        }
-        if(this.isContestWithTuristi){
-            isPartecipantiAttivo = true;
         }
         if(this.isContestWithTuristiAutenticati){
             isPartecipantiAttivo = true;
@@ -113,9 +108,6 @@ public class ContestHandler {
         if(this.isContestPOI){
             this.contest = new POIDecorator(this.contest);
         }
-        if(this.isContestWithTuristi){
-            this.contest = new TuristaDecorator(this.contest);
-        }
         if(this.isContestWithTuristiAutenticati){
             this.contest = new TuristaAutenticatoDecorator(this.contest);
         }
@@ -124,7 +116,7 @@ public class ContestHandler {
         }
     }
 
-    private boolean inviaInformazioniContest(String username){
+    private boolean inviaInformazioniContest(){
         String testo = this.contest.getInfoContest() + "\nIl contenuto da caricare dev'essere un ";
         if(this.isContestItinerario){
             testo += "Itinerario.\n";
@@ -134,95 +126,91 @@ public class ContestHandler {
         }
         testo += "Se vuoi partecipare, rispondi con ('SI') entro 24 ore.";
         String testoDefinitivo = testo;
-        if(this.isContestWithTuristi) {
-            this.utenteRepository.findAllByTipoUtente("Turista")
-                    .forEach(t -> this.notificaRepository
-                            .saveAndFlush(new Notifica(username, t.getUsername(), testoDefinitivo)));
-
-        }
         if(this.isContestWithTuristiAutenticati) {
             this.utenteRepository.findAllByTipoUtente("TuristaAutenticato")
                     .forEach(t -> this.notificaRepository
-                            .saveAndFlush(new Notifica(username, t.getUsername(), testoDefinitivo)));
+                            .saveAndFlush(new Notifica(contest.getUsernameAutore(), t.getUsername(), testoDefinitivo)));
 
         }
-        if(this.isContestWithTuristi) {
+        if(this.isContestWithContributors) {
             this.utenteRepository.findAllByTipoUtente("Contributor")
                     .forEach(t -> this.notificaRepository
-                            .saveAndFlush(new Notifica(username, t.getUsername(), testoDefinitivo)));
+                            .saveAndFlush(new Notifica(contest.getUsernameAutore(), t.getUsername(), testoDefinitivo)));
 
         }
         return true;
     }
 
-    public boolean addPartecipanti(String username) {
-        List<Notifica> notifichePartecipanti = this.getNotifichePartecipanti(username);
+    public boolean addPartecipanti() {
+        List<Notifica> notifichePartecipanti = this.getNotifichePartecipanti();
         if(notifichePartecipanti.size() >= 5) {
             List<String> usernames = notifichePartecipanti.stream()
                     .map(Notifica::getUsernameMittente).toList();
-            this.usernamePartecipanti.addAll(usernames);
+            List<Utente> partecipanti = this.utenteRepository.findAllById(usernames);
+            partecipanti.forEach(this.contest::addPartecipante);
             this.notificaRepository.deleteAll(notifichePartecipanti);
             return true;
         }
-        this.terminaContest(username);
+        this.terminaContest();
         return false;
     }
 
-    private List<Notifica> getNotifichePartecipanti(String username){
+    private List<Notifica> getNotifichePartecipanti(){
         return this.notificaRepository.findAll()
                 .stream()
-                .filter(n -> n.getUsernameDestinatario().equals(username) &&
+                .filter(n -> n.getUsernameDestinatario().equals(contest.getUsernameAutore()) &&
                         n.leggi().equalsIgnoreCase("SI"))
                 .toList();
         }
 
     public boolean caricaPOIPerContest(POI poi) {
-        List<Contenuto> cont = this.contenutoRepository
-                .findContenutiByUsernameAutore(poi.getUsernameAutore());
-        if(cont.isEmpty() || cont.stream().filter(Contenuto::isForContest).toList().isEmpty()) {
-            poi.setForContest(true);
-            this.contenutoRepository.saveAndFlush(poi);
+        if(this.isContestPOI) {
+            this.caricaContenutoPerContest(poi);
             return true;
         }
         return false;
     }
 
     public boolean caricaItinerarioPerContest(Itinerario itinerario) {
-        List<Contenuto> cont = this.contenutoRepository
-                .findContenutiByUsernameAutore(itinerario.getUsernameAutore());
-        if(cont.isEmpty() || cont.stream().filter(Contenuto::isForContest).toList().isEmpty()) {
-            itinerario.setForContest(true);
-            this.contenutoRepository.saveAndFlush(itinerario);
+        if(this.isContestItinerario) {
+            this.caricaContenutoPerContest(itinerario);
             return true;
         }
         return false;
     }
 
-    public boolean eliminaContenutoPerContest(String username) {
-        List<Contenuto> cont = this.contenutoRepository.findContenutiByUsernameAutore(username);
-        if(!cont.isEmpty()) {
-            Contenuto daEliminare = cont.stream().filter(Contenuto::isForContest).findFirst().get();
-            if (daEliminare instanceof POI) {
-                File fileDaCancellare = new File(((POI) daEliminare).getFilepath());
-                if (fileDaCancellare.exists()) {
-                    fileDaCancellare.delete();
-                }
-            }
-            this.contenutoRepository.deleteById(daEliminare.getID());
+    private void caricaContenutoPerContest(Contenuto contenuto) {
+        List<Contenuto> conts = this.contest.getContenuti()
+                .stream()
+                .filter(cont -> cont.getUsernameAutore().equals(contenuto.getUsernameAutore()))
+                .toList();
+        if (conts.isEmpty()) {
+            contenuto.setForContest(true);
+            this.contest.addContenuto(contenuto);
+            this.addPunti(contenuto.getUsernameAutore());
         }
-        return true;
+    }
+
+    private void addPunti(String username) {
+        Utente utente = this.utenteRepository.findById(username).get();
+        if(utente instanceof TuristaAutenticato turistaAutenticato) {
+            int puntiTotali = turistaAutenticato.getPunti()+this.getGestore().getPuntiPartecipazioneContest();
+            turistaAutenticato.setPunti(puntiTotali);
+            this.utenteRepository.saveAndFlush(turistaAutenticato);
+        }
     }
 
     public List<POI> getPOIsPartecipanti(){
-        return this.contenutoRepository.findAll().stream()
-                .filter(c -> c.getTipoContenuto().equals("POI") && c.isForContest())
+        List<POI> pois = this.contest.getContenuti().stream()
+                .filter(c -> c instanceof POI)
                 .map(c -> (POI) c)
                 .toList();
+        return pois;
     }
 
     public List<Itinerario> getItinerariPartecipanti(){
-        return this.contenutoRepository.findAll().stream()
-                .filter(c -> c.getTipoContenuto().equals("Itinerario") && c.isForContest())
+        return this.contest.getContenuti().stream()
+                .filter(c -> c instanceof Itinerario)
                 .map(c -> (Itinerario) c)
                 .toList();
     }
@@ -233,19 +221,16 @@ public class ContestHandler {
     }
 
     public boolean premiaVincitore(String usernameAnimatore, Utente vincitore){
-        if(!this.usernamePartecipanti.contains(vincitore.getUsername())) {
+        if(this.contest.getContenuti()
+                .stream()
+                .filter(contenuto -> contenuto.getUsernameAutore().equals(vincitore.getUsername()))
+                .toList()
+                .isEmpty()) {
             return false;
         }
-        int puntiPremio = this.getGestore().getPuntiPerAutenticazione();
-        if(vincitore instanceof Turista){
-            TuristaAutenticato turistaAutenticato = new TuristaAutenticato(vincitore.getUsername(),
-                    vincitore.getEmail(),vincitore.getPassword());
-            turistaAutenticato.setPunti(((Turista) vincitore).getPunti() + puntiPremio);
-            this.utenteRepository.delete(vincitore);
-            this.utenteRepository.saveAndFlush(turistaAutenticato);
-        }
         if (vincitore instanceof TuristaAutenticato turistaAutenticato){
-            turistaAutenticato.setPunti(turistaAutenticato.getPunti() + puntiPremio);
+            int puntiTotali = turistaAutenticato.getPunti() + this.getGestore().getPuntiVittoriaContest();
+            turistaAutenticato.setPunti(puntiTotali);
             this.utenteRepository.saveAndFlush(turistaAutenticato);
         }
         if(vincitore instanceof Contributor){
@@ -254,35 +239,37 @@ public class ContestHandler {
             this.utenteRepository.delete(vincitore);
             this.utenteRepository.saveAndFlush(contributorAutorizzato);
         }
-        this.contenutoRepository.findContenutiByUsernameAutore(vincitore.getUsername())
-                .stream().filter(Contenuto::isForContest).findFirst().ifPresent(this::caricaContenutoVincitore);
-        this.terminaContest(usernameAnimatore);
+        Contenuto daCaricare = this.contest.getContenuti().stream()
+                .filter(contenuto -> contenuto.getUsernameAutore().equals(vincitore.getUsername()))
+                .findFirst().orElse(null);
+        this.caricaContenutoVincitore(daCaricare);
+        this.contest.removeContenuto(daCaricare);
+        this.terminaContest();
         this.notificaRepository.saveAndFlush(new Notifica(usernameAnimatore, vincitore.getUsername(),
                 "Complimenti " + vincitore.getUsername() + " hai vinto il contest!"));
         return true;
     }
 
     private void caricaContenutoVincitore(Contenuto contenuto) {
-        contenuto.setDefinitive(true);
-        contenuto.setForContest(false);
-        this.contenutoRepository.saveAndFlush(contenuto);
+        if(contenuto != null) {
+            contenuto.setDefinitive(true);
+            contenuto.setForContest(false);
+            this.contenutoRepository.saveAndFlush(contenuto);
+        }
     }
 
-    private void terminaContest(String usernameAnimatore){
+    private void terminaContest(){
+        if(this.isContestPOI) {
+            this.cancellaFilePoiNonVincitori(this.contest.getContenuti());
+        }
+        this.notificaRepository.deleteAllInBatch(this.notificaRepository.findAll()
+                .stream().filter(n -> n.getUsernameMittente().equals(this.contest.getUsernameAutore())).toList());
         this.isAttivo = false;
         this.isContestItinerario = false;
         this.isContestPOI = false;
-        this.isContestWithTuristi = false;
         this.isContestWithTuristiAutenticati = false;
         this.isContestWithContributors = false;
-        this.contest = new ConcreteContest();
-        this.usernamePartecipanti = new ArrayList<>();
-        List<Contenuto> daCancellare = this.contenutoRepository.findAll().stream()
-                .filter(Contenuto::isForContest).toList();
-        this.cancellaFilePoiNonVincitori(daCancellare);
-        this.contenutoRepository.deleteAllInBatch(daCancellare);
-        this.notificaRepository.deleteAllInBatch(this.notificaRepository.findAll()
-                .stream().filter(n -> n.getUsernameMittente().equals(usernameAnimatore)).toList());
+        this.contest = null;
     }
 
     private void cancellaFilePoiNonVincitori(List<Contenuto> daCancellare) {

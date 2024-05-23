@@ -63,28 +63,28 @@ public class ContenutiHandler {
 
     public List<POI> getPOIsInPending(){
         return this.contenutoRepository.findAll().stream()
-                .filter(c -> c.getTipoContenuto().equals("POI") && c.isInPending())
+                .filter(c -> c instanceof POI && c.isInPending())
                 .map(c -> (POI) c)
                 .toList();
     }
 
     public List<Itinerario> getItinerariInPending(){
         return this.contenutoRepository.findAll().stream()
-                .filter(c -> c.getTipoContenuto().equals("Itinerario") && c.isInPending())
+                .filter(c -> c instanceof Itinerario && c.isInPending())
                 .map(c -> (Itinerario) c)
                 .toList();
     }
 
     public List<POI> getPOIS(){
         return this.contenutoRepository.findAll().stream()
-                .filter(c -> c.getTipoContenuto().equals("POI") && c.isDefinitive())
+                .filter(c -> c instanceof POI && c.isDefinitive())
                 .map(c -> (POI) c)
                 .toList();
     }
 
     public List<Itinerario> getItinerari(){
         return this.contenutoRepository.findAll().stream()
-                .filter(c -> c.getTipoContenuto().equals("Itinerario") && c.isDefinitive())
+                .filter(c -> c instanceof Itinerario && c.isDefinitive())
                 .map(c -> (Itinerario) c)
                 .toList();
     }

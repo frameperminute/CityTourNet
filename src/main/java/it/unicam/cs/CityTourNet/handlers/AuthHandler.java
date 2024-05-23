@@ -43,19 +43,6 @@ public class AuthHandler {
         return false;
     }
 
-    private List<TuristaAutenticato> getTuristiAutenticatiInScadenza(){
-        return this.getTuristiAutenticati()
-                .stream()
-                .filter(t -> t.getDataInizioAutenticazione().until(LocalDateTime.now(), ChronoUnit.DAYS) > 30)
-                .toList();
-    }
-
-    private List<TuristaAutenticato> getTuristiAutenticati(){
-        return this.utenteRepository.findAllByTipoUtente("TuristaAutenticato")
-                .stream()
-                .map(t -> (TuristaAutenticato) t)
-                .toList();
-    }
 
     private List<ContributorAutorizzato> getContributorAutorizzati(){
         return this.utenteRepository.findAllByTipoUtente("ContributorAutorizzato")
@@ -67,43 +54,6 @@ public class AuthHandler {
     private GestoreDellaPiattaforma getGestore() {
         return (GestoreDellaPiattaforma) this.utenteRepository.findAllByTipoUtente("GestoreDellaPiattaforma")
                 .stream().findFirst().orElse(null);
-    }
-
-    public boolean eliminaAutenticazioni(){
-        List<TuristaAutenticato> turistiAutenticatiInScadenza = this.getTuristiAutenticatiInScadenza();
-        if(!turistiAutenticatiInScadenza.isEmpty()) {
-            List<Turista> listaTuristi = turistiAutenticatiInScadenza
-                    .stream()
-                    .map(t -> {
-                        Turista turista = new Turista(t.getUsername(), t.getEmail(), t.getPassword());
-                        turista.setPunti(t.getPunti());
-                        return turista;
-                    })
-                    .toList();
-            this.utenteRepository.deleteAll(turistiAutenticatiInScadenza);
-            this.utenteRepository.saveAllAndFlush(listaTuristi);
-            listaTuristi.forEach(t -> this.notificaRepository.saveAndFlush(
-                            new Notifica(this.getGestore().getUsername(), t.getUsername(),
-                                    "Autenticazione scaduta")));
-        }
-        return true;
-    }
-
-    public boolean richiediAutenticazione(String username){
-        if(!this.utenteRepository.existsById(username) || this.getGestore() == null) {
-            return false;
-        }
-        Turista turista = (Turista) this.utenteRepository.findById(username).get();
-        int puntiPerAutenticazione = this.getGestore().getPuntiPerAutenticazione();
-        if(turista.getPunti() >= puntiPerAutenticazione){
-            TuristaAutenticato turistaAutenticato = new TuristaAutenticato(turista.getUsername(),
-                    turista.getEmail(),turista.getPassword());
-            turistaAutenticato.setPunti(turista.getPunti()-puntiPerAutenticazione);
-            this.utenteRepository.delete(turista);
-            this.utenteRepository.saveAndFlush(turistaAutenticato);
-            return true;
-        }
-        return false;
     }
 
     public boolean richiediAutorizzazione(String username){

@@ -7,6 +7,7 @@ import it.unicam.cs.CityTourNet.handlers.UtentiHandler;
 import it.unicam.cs.CityTourNet.model.contenuto.Itinerario;
 import it.unicam.cs.CityTourNet.model.contenuto.POI;
 import it.unicam.cs.CityTourNet.model.contest.ConcreteContest;
+import it.unicam.cs.CityTourNet.model.contest.Contest;
 import it.unicam.cs.CityTourNet.model.utente.Animatore;
 import it.unicam.cs.CityTourNet.model.utente.Utente;
 import it.unicam.cs.CityTourNet.utils.UtenteCredentials;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -146,27 +148,11 @@ public class ContestController {
         return new ResponseEntity<>("Hai fatto riferimento a POI inesistenti", HttpStatus.BAD_REQUEST);
     }
 
-    @DeleteMapping("/eliminaContenutoContest")
-    public ResponseEntity<Object> eliminaContenutoContest(@RequestBody UtenteCredentials credentials) {
-        if(!this.contestHandler.isAttivo()) {
-            return new ResponseEntity<>("Contest non attivo", HttpStatus.BAD_REQUEST);
-        }
-        Utente utente = this.utentiHandler.getUtenteByUsername(credentials.username());
-        if(utente != null && utente.getPassword().equals(credentials.password())) {
-            this.contestHandler.eliminaContenutoPerContest(credentials.username());
-            return new ResponseEntity<>("Contenuto di: " + credentials.username()
-                    + " eliminato", HttpStatus.OK);
-        }
-        return new ResponseEntity<>("Username o password errati", HttpStatus.BAD_REQUEST);
-    }
 
     @PostMapping("/crea")
-    public ResponseEntity<Object> creaContest(@RequestParam String dataFine,
-                                              @RequestParam String tematica,
-                                              @RequestParam String usernameAutore) {
-        Utente utente = this.utentiHandler.getUtenteByUsername(usernameAutore);
-        if(utente != null && utente.getClass().getSimpleName().equals("Animatore")) {
-            ConcreteContest contest = new ConcreteContest(dataFine,tematica,usernameAutore);
+    public ResponseEntity<Object> creaContest(@RequestBody ConcreteContest contest) {
+        Utente utente = this.utentiHandler.getUtenteByUsername(contest.getUsernameAutore());
+        if(utente instanceof Animatore) {
             if(!this.contestHandler.creaContest(contest)) {
                 return new ResponseEntity<>("C'e' gia' un contest attivo " +
                         "oppure non hai ancora selezionato le opzioni", HttpStatus.BAD_REQUEST);
@@ -197,23 +183,10 @@ public class ContestController {
         return new ResponseEntity<>("Contest gia' attivo", HttpStatus.BAD_REQUEST);
     }
 
-    @PutMapping("/selezionaOpzioneTuristi")
-    public ResponseEntity<Object> selezionaOpzioneTuristi() {
-        if(!this.contestHandler.isAttivo()) {
-            boolean result = this.contestHandler.selezionaOpzioneTuristi();
-            if(result) {
-                return new ResponseEntity<>("Opzione turisti attivata", HttpStatus.OK);
-            }
-            return new ResponseEntity<>("Opzione turisti disattivata", HttpStatus.OK);
-        }
-        return new ResponseEntity<>("Contest gia' attivo", HttpStatus.BAD_REQUEST);
-    }
-
     @PutMapping("/selezionaOpzioneTuristiAutenticati")
     public ResponseEntity<Object> selezionaOpzioneTuristiAutenticati() {
         if(!this.contestHandler.isAttivo()) {
-            boolean result = this.contestHandler.selezionaOpzioneTuristiAutenticati();
-            if(result) {
+            if(this.contestHandler.selezionaOpzioneTuristiAutenticati()) {
                 return new ResponseEntity<>("Opzione turisti autenticati attivata", HttpStatus.OK);
             }
             return new ResponseEntity<>("Opzione turisti autenticati disattivata", HttpStatus.OK);
@@ -224,8 +197,7 @@ public class ContestController {
     @PutMapping("/selezionaOpzioneContributors")
     public ResponseEntity<Object> selezionaOpzioneContributors() {
         if(!this.contestHandler.isAttivo()) {
-            boolean result = this.contestHandler.selezionaOpzioneContributors();
-            if(result) {
+            if(this.contestHandler.selezionaOpzioneContributors()) {
                 return new ResponseEntity<>("Opzione contributors attivata", HttpStatus.OK);
             }
             return new ResponseEntity<>("Opzione contributors disattivata", HttpStatus.OK);
@@ -252,9 +224,9 @@ public class ContestController {
     @PostMapping("/aggiungiPartecipanti")
     public ResponseEntity<Object> aggiungiPartecipanti(@RequestBody UtenteCredentials credentials) {
         Utente utente = this.utentiHandler.getUtenteByUsername(credentials.username());
-        if(utente != null && utente.getPassword().equals(credentials.password()) && utente instanceof Animatore) {
+        if(utente instanceof Animatore && utente.getPassword().equals(credentials.password())) {
             if (this.contestHandler.isAttivo()) {
-                if(this.contestHandler.addPartecipanti(credentials.username())) {
+                if(this.contestHandler.addPartecipanti()) {
                     return new ResponseEntity<>("Partecipanti aggiunti", HttpStatus.OK);
                 }
                 return new ResponseEntity<>("Numero partecipanti insufficiente. Contest terminato",
@@ -272,7 +244,7 @@ public class ContestController {
                                                   @RequestParam String usernameVincitore) {
         Utente animatore = this.utentiHandler.getUtenteByUsername(username);
         Utente vincitore = this.utentiHandler.getUtenteByUsername(usernameVincitore);
-        if(animatore != null && animatore.getPassword().equals(password) && animatore instanceof Animatore) {
+        if(animatore instanceof Animatore && animatore.getPassword().equals(password)) {
             if (this.contestHandler.isAttivo()) {
                 this.contestHandler.premiaVincitore(username,vincitore);
                 this.authHandler.setContestAttivo(false);

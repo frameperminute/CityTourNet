@@ -1,22 +1,30 @@
 package it.unicam.cs.CityTourNet.model.contest;
 
+import it.unicam.cs.CityTourNet.model.contenuto.Contenuto;
+import it.unicam.cs.CityTourNet.model.utente.Utente;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Entity
-@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(name = "tipo_contest", discriminatorType = DiscriminatorType.STRING)
-@NoArgsConstructor(force = true)
-@Getter
-public abstract class Contest {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long ID;
-    @Column(name = "tipo_contest", insertable = false, updatable = false)
-    protected String tipoContest;
+import java.util.List;
 
-    abstract public String getInfoContest();
+public interface Contest {
 
-    abstract public String getTempoResiduo();
+    String getInfoContest();
+
+    String getTempoResiduo();
+
+    List<Utente> getPartecipanti();
+
+    Utente getUtenteByUsername(String username);
+
+    List<Contenuto> getContenuti();
+
+    boolean addContenuto(Contenuto contenuto);
+
+    boolean addPartecipante(Utente partecipante);
+
+    boolean removeContenuto(Contenuto contenuto);
+
+    String getUsernameAutore();
 }

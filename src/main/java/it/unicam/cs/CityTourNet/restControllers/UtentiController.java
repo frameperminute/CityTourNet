@@ -20,7 +20,7 @@ public class UtentiController {
     }
 
     @PostMapping("/iscrivitiTurista")
-    public ResponseEntity<Object> iscrizioneTurista(@RequestBody Turista turista) {
+    public ResponseEntity<Object> iscrizioneTurista(@RequestBody TuristaAutenticato turista) {
         if(this.utentiHandler.iscrivi(turista)) {
             return new ResponseEntity<>("Iscrizione effettuata", HttpStatus.OK);
         }

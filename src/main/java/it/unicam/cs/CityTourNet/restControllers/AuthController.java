@@ -18,19 +18,6 @@ public class AuthController {
         this.authHandler = authHandler;
     }
 
-    @PutMapping("/richiediAutenticazione")
-    public ResponseEntity<Object> richiediAutenticazione(@RequestParam String username) {
-        if(this.authHandler.isContestAttivo()) {
-            return new ResponseEntity<>("Al momento c'e' un contest attivo, " +
-                    "percio' non puoi richiedere l'autenticazione", HttpStatus.OK);
-        }
-        if(this.authHandler.richiediAutenticazione(username)) {
-            return new ResponseEntity<>("Autenticazione eseguita con successo", HttpStatus.OK);
-        }
-        return new ResponseEntity<>("Non hai abbastanza punti per richiedere l'autenticazione",
-                HttpStatus.UNAUTHORIZED);
-    }
-
     @PutMapping("/richiediAutorizzazione")
     public ResponseEntity<Object> richiediAutorizzazione(@RequestParam String username) {
         if(this.authHandler.isContestAttivo()) {
@@ -42,16 +29,6 @@ public class AuthController {
         }
         return new ResponseEntity<>("Non hai caricato abbastanza contenuti per richiedere l'autorizzazione",
                 HttpStatus.UNAUTHORIZED);
-    }
-
-    @PutMapping("/eliminaAutenticazione")
-    public ResponseEntity<Object> eliminaAutenticazioni(@RequestBody UtenteCredentials credentials) {
-        if(this.authHandler.isGestore(credentials.username(), credentials.password())) {
-            this.authHandler.eliminaAutenticazioni();
-            return new ResponseEntity<>("Autenticazioni eliminate", HttpStatus.OK);
-        }
-        return new ResponseEntity<>("Non hai i permessi per poter " +
-                "eseguire questa funzione", HttpStatus.UNAUTHORIZED);
     }
 
     @PutMapping("/gestisciAutorizzazioni")

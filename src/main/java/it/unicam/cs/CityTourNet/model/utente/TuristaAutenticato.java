@@ -14,12 +14,10 @@ import java.time.LocalDateTime;
 @DiscriminatorValue("TuristaAutenticato")
 public class TuristaAutenticato extends Utente implements Acquirente {
 
-    private int punti;
-    private LocalDateTime dataInizioAutenticazione;
+    private int punti = 0;
+    private LocalDateTime dataInizioAutenticazione = LocalDateTime.now();
 
     public TuristaAutenticato(String username, String email, String password) {
         super(username, email, password);
-        this.punti = 0;
-        this.dataInizioAutenticazione = LocalDateTime.now();
     }
 }

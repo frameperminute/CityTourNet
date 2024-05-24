@@ -54,9 +54,7 @@ public class CompraVenditaHandler {
 
     public int getPuntiUtente(String username){
         Utente utente = this.utenteRepository.findById(username).get();
-        if(utente instanceof Turista) {
-            return ((Turista) utente).getPunti();
-        } else if (utente instanceof TuristaAutenticato) {
+        if(utente instanceof TuristaAutenticato) {
             return ((TuristaAutenticato) utente).getPunti();
         }
         return -1;
@@ -71,7 +69,7 @@ public class CompraVenditaHandler {
 
     public boolean gestisciAcquistoProdottoGadget(long id, int numPezzi,
                                                   String username, String indirizzo) {
-        Acquirente acquirente = (Acquirente) this.utenteRepository.findById(username).get();
+        TuristaAutenticato acquirente = (TuristaAutenticato) this.utenteRepository.findById(username).get();
         ProdottoGadget prodottoDaAcquistare = (ProdottoGadget) this.contenutoRepository.findById(id).get();
         int totale = prodottoDaAcquistare.getPrezzo()*numPezzi;
         if(prodottoDaAcquistare.getNumPezzi() >= numPezzi) {

@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Entity
 @NoArgsConstructor(force = true)
 @DiscriminatorValue("TuristaAutenticato")
-public class TuristaAutenticato extends Utente implements Acquirente {
+public class TuristaAutenticato extends Utente {
 
     private int punti = 0;
     private LocalDateTime dataInizioAutenticazione = LocalDateTime.now();

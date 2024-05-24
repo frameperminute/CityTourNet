@@ -1,47 +1,47 @@
 package it.unicam.cs.CityTourNet.handlers;
 
-import it.unicam.cs.CityTourNet.model.contenuto.Contenuto;
-import it.unicam.cs.CityTourNet.model.contenuto.Itinerario;
-import it.unicam.cs.CityTourNet.model.contenuto.POI;
+import it.unicam.cs.CityTourNet.model.contenuto.*;
+import it.unicam.cs.CityTourNet.repositories.ContenutoMementoRepository;
 import it.unicam.cs.CityTourNet.repositories.ContenutoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
 public class ContenutiHandler {
 
     private final ContenutoRepository contenutoRepository;
+    private final ContenutoMementoRepository contenutoMementoRepository;
 
     @Autowired
-    public ContenutiHandler(ContenutoRepository contenutoRepository) {
+    public ContenutiHandler(ContenutoRepository contenutoRepository, ContenutoMementoRepository contenutoMementoRepository) {
         this.contenutoRepository = contenutoRepository;
+        this.contenutoMementoRepository = contenutoMementoRepository;
     }
 
-    public boolean addPOI(POI poi) {
+    public void addPOI(POI poi) {
         poi.setDefinitive(true);
         this.contenutoRepository.saveAndFlush(poi);
-        return true;
+        this.salvaStato(poi);
     }
 
-    public boolean addItinerario(Itinerario itinerario) {
+    public void addItinerario(Itinerario itinerario) {
         itinerario.setDefinitive(true);
         this.contenutoRepository.saveAndFlush(itinerario);
-        return true;
+        this.salvaStato(itinerario);
     }
 
-    public boolean addPOIInPending(POI poi) {
+    public void addPOIInPending(POI poi) {
         poi.setInPending(true);
         this.contenutoRepository.saveAndFlush(poi);
-        return true;
     }
 
-    public boolean addItinerarioInPending(Itinerario itinerario) {
+    public void addItinerarioInPending(Itinerario itinerario) {
         itinerario.setInPending(true);
         this.contenutoRepository.saveAndFlush(itinerario);
-        return true;
     }
 
     public List<Contenuto> getContenutiByAutore(String username){
@@ -90,7 +90,7 @@ public class ContenutiHandler {
     }
 
 
-    public boolean removeContenuto(long id){
+    public void removeContenuto(long id){
         if(this.contenutoRepository.existsById(id)) {
             Contenuto daEliminare = this.contenutoRepository.findById(id).get();
             if(daEliminare instanceof POI) {
@@ -99,9 +99,13 @@ public class ContenutiHandler {
                     fileDaCancellare.delete();
                 }
             }
+            List<ContenutoMemento> mementoStack = this.contenutoMementoRepository.findAll()
+                    .stream()
+                    .filter(m -> m.getIDContenuto() == daEliminare.getID())
+                    .toList();
+            this.contenutoMementoRepository.deleteAll(mementoStack);
             this.contenutoRepository.deleteById(id);
         }
-        return true;
     }
 
     public boolean caricaDefinitivamente(long id){
@@ -110,6 +114,43 @@ public class ContenutiHandler {
             definitivo.setDefinitive(true);
             definitivo.setInPending(false);
             this.contenutoRepository.saveAndFlush(definitivo);
+            this.salvaStato(definitivo);
+            return true;
+        }
+        return false;
+    }
+
+    private void salvaStato(Contenuto contenuto){
+        this.contenutoMementoRepository.saveAndFlush(contenuto.createMemento());
+    }
+
+    public boolean recuperaStato(Contenuto contenuto) {
+        List<ContenutoMemento> mementoStack = this.contenutoMementoRepository.findAll()
+                .stream().filter(m -> m.getIDContenuto() == contenuto.getID())
+                .sorted(Comparator.comparingLong(ContenutoMemento::getId))
+                .toList();
+        if (mementoStack.size() > 1) {
+            ContenutoMemento daRecuperare = mementoStack.get(mementoStack.size() - 2);
+            ContenutoMemento daEliminare = mementoStack.get(mementoStack.size() - 1);
+            contenuto.restoreMemento(daRecuperare);
+            this.contenutoMementoRepository.deleteById(daEliminare.getId());
+            return true;
+        }
+        return false;
+    }
+
+    public boolean annullaModifiche(long id) {
+        if(this.contenutoRepository.existsById(id)) {
+            return this.recuperaStato(this.contenutoRepository.findById(id).get());
+        }
+        return false;
+    }
+
+    public boolean eseguiModifiche(String nome, String descrizione, long id) {
+        if(this.contenutoRepository.existsById(id)) {
+            this.contenutoRepository.findById(id).get().setNome(nome);
+            this.contenutoRepository.findById(id).get().setDescrizione(descrizione);
+            this.salvaStato(this.contenutoRepository.findById(id).get());
             return true;
         }
         return false;

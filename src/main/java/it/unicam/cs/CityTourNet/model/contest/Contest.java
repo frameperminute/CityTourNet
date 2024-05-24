@@ -2,9 +2,6 @@ package it.unicam.cs.CityTourNet.model.contest;
 
 import it.unicam.cs.CityTourNet.model.contenuto.Contenuto;
 import it.unicam.cs.CityTourNet.model.utente.Utente;
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 import java.util.List;
 

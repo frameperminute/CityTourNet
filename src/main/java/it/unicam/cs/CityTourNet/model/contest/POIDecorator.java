@@ -1,11 +1,7 @@
 package it.unicam.cs.CityTourNet.model.contest;
 
 import it.unicam.cs.CityTourNet.model.contenuto.Contenuto;
-import it.unicam.cs.CityTourNet.model.contenuto.Itinerario;
 import it.unicam.cs.CityTourNet.model.contenuto.POI;
-import jakarta.persistence.DiscriminatorValue;
-import jakarta.persistence.Entity;
-import lombok.NoArgsConstructor;
 
 public class POIDecorator extends ContestDecorator{
     public POIDecorator(Contest contest) {

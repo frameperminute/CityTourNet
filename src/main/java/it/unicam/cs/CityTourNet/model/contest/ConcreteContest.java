@@ -2,10 +2,6 @@ package it.unicam.cs.CityTourNet.model.contest;
 
 import it.unicam.cs.CityTourNet.model.contenuto.Contenuto;
 import it.unicam.cs.CityTourNet.model.utente.Utente;
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -23,9 +19,9 @@ public class ConcreteContest implements Contest {
 
     private final String tematica;
 
-    private List<Utente> partecipanti;
+    private final List<Utente> partecipanti;
 
-    private List<Contenuto> contenuti;
+    private final List<Contenuto> contenuti;
 
 
 

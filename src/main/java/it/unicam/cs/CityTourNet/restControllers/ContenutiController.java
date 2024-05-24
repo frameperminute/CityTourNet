@@ -114,12 +114,12 @@ public class ContenutiController {
         File newFile = new File(path);
         try (OutputStream os = new FileOutputStream(newFile)) {
             os.write(file.getBytes());
-            if(utente.getClass().getSimpleName().equals("ContributorAutorizzato")) {
+            if(utente instanceof ContributorAutorizzato) {
                 this.contenutiHandler.addPOI(poi);
                 return new ResponseEntity<>("POI salvato", HttpStatus.OK);
-            } else if(utente.getClass().getSimpleName().equals("Contributor")){
+            } else if(utente instanceof Contributor){
                 this.contenutiHandler.addPOIInPending(poi);
-                return new ResponseEntity<>("POI salvato", HttpStatus.OK);
+                return new ResponseEntity<>("POI salvato in pending", HttpStatus.OK);
             } else {
                 return new ResponseEntity<>("Non sei autorizzato", HttpStatus.UNAUTHORIZED);
             }
@@ -204,5 +204,35 @@ public class ContenutiController {
             case ".mp4" -> "video/mp4";
             default -> "";
         };
+    }
+
+    @PutMapping("/eseguiModifiche")
+    public ResponseEntity<Object> eseguiModifiche(@RequestParam String username,
+                                                  @RequestParam String password,
+                                                  @RequestParam long ID,
+                                                  @RequestParam String nome,
+                                                  @RequestParam String descrizione) {
+        Utente utente = this.utentiHandler.getUtenteByUsername(username);
+        if(utente != null && utente.getPassword().equals(password)) {
+            if(this.contenutiHandler.eseguiModifiche(nome, descrizione, ID)) {
+                return new ResponseEntity<>("Modifiche eseguite", HttpStatus.OK);
+            }
+            return new ResponseEntity<>("Il contenuto non esiste", HttpStatus.OK);
+        }
+        return new ResponseEntity<>("Non sei autorizzato", HttpStatus.UNAUTHORIZED);
+    }
+
+    @PutMapping("/annullaModifiche")
+    public ResponseEntity<Object> annullaModifiche(@RequestParam String username,
+                                                   @RequestParam String password,
+                                                   @RequestParam long ID) {
+        Utente utente = this.utentiHandler.getUtenteByUsername(username);
+        if(utente != null && utente.getPassword().equals(password)) {
+            if(this.contenutiHandler.annullaModifiche(ID)) {
+                return new ResponseEntity<>("Modifiche annullate", HttpStatus.OK);
+            }
+            return new ResponseEntity<>("Il contenuto e' gia' alla sua prima versione", HttpStatus.OK);
+        }
+        return new ResponseEntity<>("Non sei autorizzato", HttpStatus.UNAUTHORIZED);
     }
 }

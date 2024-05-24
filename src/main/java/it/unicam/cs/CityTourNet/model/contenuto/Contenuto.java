@@ -40,4 +40,14 @@ public abstract class Contenuto {
         this.usernameAutore = usernameAutore;
         this.dataCreazione = LocalDateTime.now();
     }
+
+    public abstract ContenutoMemento createMemento();
+
+    public void restoreMemento(ContenutoMemento memento) {
+        this.nome = memento.getNome();
+        this.descrizione = memento.getDescrizione();
+        this.isInPending = memento.isInPending();
+        this.isDefinitive = memento.isDefinitive();
+        this.dataCreazione = memento.getDataCreazione();
+    }
 }

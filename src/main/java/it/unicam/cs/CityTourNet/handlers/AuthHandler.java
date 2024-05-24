@@ -73,12 +73,11 @@ public class AuthHandler {
         return false;
     }
 
-    public boolean gestisciAutorizzazioni(){
+    public void gestisciAutorizzazioni(){
         this.getContributorAutorizzati()
                 .stream()
                 .filter(c -> this.findContenutiRecenti(c.getUsername()))
                 .forEach(c -> this.gestisciEsitiNegativi(c.getUsername()));
-            return true;
     }
 
     private boolean findContenutiRecenti(String username) {
@@ -88,9 +87,9 @@ public class AuthHandler {
                         .until(LocalDateTime.now(),ChronoUnit.DAYS) <= 7).toList().isEmpty();
     }
 
-    public boolean gestisciEsitiNegativi(String username){
+    public void gestisciEsitiNegativi(String username){
         if(!this.utenteRepository.existsById(username) || this.getGestore() == null) {
-            return false;
+            return;
         }
         ContributorAutorizzato daControllare =
                 (ContributorAutorizzato) this.utenteRepository.findById(username).get();
@@ -103,10 +102,8 @@ public class AuthHandler {
             this.notificaRepository.saveAndFlush(new Notifica(this.getGestore().getUsername(),
                     nuovoContributor.getUsername(),
                     "Autorizzazione scaduta"));
-            return true;
         } else {
             this.utenteRepository.saveAndFlush(daControllare);
         }
-        return false;
     }
 }

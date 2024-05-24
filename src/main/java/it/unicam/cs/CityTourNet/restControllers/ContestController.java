@@ -7,7 +7,6 @@ import it.unicam.cs.CityTourNet.handlers.UtentiHandler;
 import it.unicam.cs.CityTourNet.model.contenuto.Itinerario;
 import it.unicam.cs.CityTourNet.model.contenuto.POI;
 import it.unicam.cs.CityTourNet.model.contest.ConcreteContest;
-import it.unicam.cs.CityTourNet.model.contest.Contest;
 import it.unicam.cs.CityTourNet.model.utente.Animatore;
 import it.unicam.cs.CityTourNet.model.utente.Utente;
 import it.unicam.cs.CityTourNet.utils.UtenteCredentials;
@@ -22,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 

@@ -12,6 +12,7 @@ import lombok.Setter;
 @NoArgsConstructor(force = true)
 @DiscriminatorValue("ProdottoGadget")
 public class ProdottoGadget extends Contenuto{
+
     private int prezzo;
     private int numPezzi;
     private String filepath;
@@ -21,5 +22,18 @@ public class ProdottoGadget extends Contenuto{
         this.numPezzi = numPezzi;
         this.isDefinitive = true;
     }
+    @Override
+    public ProdottoGadgetMemento createMemento() {
+        return new ProdottoGadgetMemento(this);
+    }
 
+    @Override
+    public void restoreMemento(ContenutoMemento memento) {
+        super.restoreMemento(memento);
+        if (memento instanceof ProdottoGadgetMemento prodottoGadgetMemento) {
+            this.prezzo = prodottoGadgetMemento.getPrezzo();
+            this.numPezzi = prodottoGadgetMemento.getNumPezzi();
+            this.filepath = prodottoGadgetMemento.getFilepath();
+        }
+    }
 }

@@ -21,13 +21,11 @@ public class NotificheHandler {
         this.utenteRepository = utenteRepository;
     }
 
-    public boolean inviaNotifica(Notifica notifica) {
+    public void inviaNotifica(Notifica notifica) {
         if(this.utenteRepository.existsById(notifica.getUsernameMittente())
                 && this.utenteRepository.existsById(notifica.getUsernameDestinatario())) {
             this.notificaRepository.saveAndFlush(notifica);
-            return true;
         }
-        return false;
     }
 
     public List<Notifica> leggiTutto(String destinatario) {
@@ -68,22 +66,19 @@ public class NotificheHandler {
         return daLeggere;
     }
 
-    public boolean eliminaTutto(String destinatario) {
+    public void eliminaTutto(String destinatario) {
         this.notificaRepository.deleteAllInBatch(this.leggiTutto(destinatario));
-        return true;
     }
 
-    public boolean eliminaByTesto(String destinatario, String testo) {
+    public void eliminaByTesto(String destinatario, String testo) {
         this.notificaRepository.deleteAllInBatch(this.leggiByTesto(destinatario,testo));
-        return true;
     }
 
-    public boolean eliminaGiaLette(String destinatario) {
+    public void eliminaGiaLette(String destinatario) {
         List<Notifica> giaLetti = this.leggiTutto(destinatario).stream().filter(Notifica::isLetto).toList();
         if(!giaLetti.isEmpty()) {
             this.notificaRepository.deleteAllInBatch(giaLetti);
         }
-        return true;
     }
 
 }

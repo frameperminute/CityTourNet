@@ -6,6 +6,7 @@ import it.unicam.cs.CityTourNet.model.contenuto.Itinerario;
 import it.unicam.cs.CityTourNet.model.contenuto.POI;
 import it.unicam.cs.CityTourNet.model.contest.*;
 import it.unicam.cs.CityTourNet.model.utente.*;
+import it.unicam.cs.CityTourNet.repositories.ContenutoMementoRepository;
 import it.unicam.cs.CityTourNet.repositories.ContenutoRepository;
 import it.unicam.cs.CityTourNet.repositories.NotificaRepository;
 import it.unicam.cs.CityTourNet.repositories.UtenteRepository;
@@ -23,6 +24,7 @@ public class ContestHandler {
     private final UtenteRepository utenteRepository;
     private final NotificaRepository notificaRepository;
     private final ContenutoRepository contenutoRepository;
+    private final ContenutoMementoRepository contenutoMementoRepository;
     private Contest contest;
     private boolean isContestItinerario;
     private boolean isContestPOI;
@@ -32,30 +34,29 @@ public class ContestHandler {
 
     @Autowired
     public ContestHandler(UtenteRepository utenteRepository, NotificaRepository notificaRepository,
-                          ContenutoRepository contenutoRepository){
+                          ContenutoRepository contenutoRepository, ContenutoMementoRepository contenutoMementoRepository){
         this.utenteRepository = utenteRepository;
         this.notificaRepository = notificaRepository;
         this.contenutoRepository = contenutoRepository;
+        this.contenutoMementoRepository = contenutoMementoRepository;
     }
 
     public boolean isAttivo() {
         return this.isAttivo;
     }
 
-    public boolean selezionaOpzioneItinerario(){
+    public void selezionaOpzioneItinerario(){
         if(!this.isAttivo){
             this.isContestItinerario = true;
             this.isContestPOI = false;
         }
-        return true;
     }
 
-    public boolean selezionaOpzionePOI(){
+    public void selezionaOpzionePOI(){
         if(!this.isAttivo){
             this.isContestPOI = true;
             this.isContestItinerario = false;
         }
-        return true;
     }
 
     public boolean selezionaOpzioneTuristiAutenticati(){
@@ -116,7 +117,7 @@ public class ContestHandler {
         }
     }
 
-    private boolean inviaInformazioniContest(){
+    private void inviaInformazioniContest(){
         String testo = this.contest.getInfoContest() + "\nIl contenuto da caricare dev'essere un ";
         if(this.isContestItinerario){
             testo += "Itinerario.\n";
@@ -138,7 +139,6 @@ public class ContestHandler {
                             .saveAndFlush(new Notifica(contest.getUsernameAutore(), t.getUsername(), testoDefinitivo)));
 
         }
-        return true;
     }
 
     public boolean addPartecipanti() {
@@ -220,11 +220,11 @@ public class ContestHandler {
                 .stream().findFirst().orElse(null);
     }
 
-    public boolean premiaVincitore(String usernameAnimatore, Utente vincitore){
+    public void premiaVincitore(String usernameAnimatore, Utente vincitore){
         if(this.contest.getContenuti()
                 .stream()
                 .noneMatch(contenuto -> contenuto.getUsernameAutore().equals(vincitore.getUsername()))) {
-            return false;
+            return;
         }
         if (vincitore instanceof TuristaAutenticato turistaAutenticato){
             int puntiTotali = turistaAutenticato.getPunti() + this.getGestore().getPuntiVittoriaContest();
@@ -246,14 +246,18 @@ public class ContestHandler {
         this.terminaContest();
         this.notificaRepository.saveAndFlush(new Notifica(usernameAnimatore, vincitore.getUsername(),
                 "Complimenti " + vincitore.getUsername() + " hai vinto il contest!"));
-        return true;
     }
 
     private void caricaContenutoVincitore(Contenuto contenuto) {
         if(contenuto != null) {
             contenuto.setDefinitive(true);
+            this.salvaStato(contenuto);
             this.contenutoRepository.saveAndFlush(contenuto);
         }
+    }
+
+    private void salvaStato(Contenuto contenuto){
+        this.contenutoMementoRepository.saveAndFlush(contenuto.createMemento());
     }
 
     private void terminaContest(){

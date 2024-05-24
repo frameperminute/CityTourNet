@@ -3,7 +3,7 @@ package it.unicam.cs.CityTourNet.restControllers;
 import it.unicam.cs.CityTourNet.handlers.CompraVenditaHandler;
 import it.unicam.cs.CityTourNet.handlers.UtentiHandler;
 import it.unicam.cs.CityTourNet.model.contenuto.ProdottoGadget;
-import it.unicam.cs.CityTourNet.model.utente.ContributorAutorizzato;
+import it.unicam.cs.CityTourNet.model.utente.Contributor;
 import it.unicam.cs.CityTourNet.model.utente.Utente;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -87,7 +87,7 @@ public class CompraVenditaController {
         Utente utente = this.utentiHandler.getUtenteByUsername(daVendere.getUsernameAutore());
         try (OutputStream os = new FileOutputStream(newFile)) {
             os.write(file.getBytes());
-            if(utente instanceof ContributorAutorizzato){
+            if(utente instanceof Contributor){
                 this.compraVenditaHandler.addProdottoGadget(daVendere);
                 return new ResponseEntity<>("Prodotto aggiunto con successo", HttpStatus.OK);
             } else {
@@ -155,5 +155,35 @@ public class CompraVenditaController {
             case ".mp4" -> "video/mp4";
             default -> "";
         };
+    }
+
+    @PutMapping("/eseguiModifiche")
+    public ResponseEntity<Object> eseguiModifiche(@RequestParam String username,
+                                                  @RequestParam String password,
+                                                  @RequestParam long ID,
+                                                  @RequestParam int prezzo,
+                                                  @RequestParam int numPezzi) {
+        Utente utente = this.utentiHandler.getUtenteByUsername(username);
+        if(utente != null && utente.getPassword().equals(password)) {
+            if(this.compraVenditaHandler.eseguiModifiche(prezzo, numPezzi, ID)) {
+                return new ResponseEntity<>("Modifiche eseguite", HttpStatus.OK);
+            }
+            return new ResponseEntity<>("Il contenuto non esiste", HttpStatus.OK);
+        }
+        return new ResponseEntity<>("Non sei autorizzato", HttpStatus.UNAUTHORIZED);
+    }
+
+    @PutMapping("/annullaModifiche")
+    public ResponseEntity<Object> annullaModifiche(@RequestParam String username,
+                                                   @RequestParam String password,
+                                                   @RequestParam long ID) {
+        Utente utente = this.utentiHandler.getUtenteByUsername(username);
+        if(utente != null && utente.getPassword().equals(password)) {
+            if(this.compraVenditaHandler.annullaModifiche(ID)) {
+                return new ResponseEntity<>("Modifiche annullate", HttpStatus.OK);
+            }
+            return new ResponseEntity<>("Il contenuto e' gia' alla sua prima versione", HttpStatus.OK);
+        }
+        return new ResponseEntity<>("Non sei autorizzato", HttpStatus.UNAUTHORIZED);
     }
 }

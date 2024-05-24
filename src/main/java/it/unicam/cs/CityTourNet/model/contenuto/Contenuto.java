@@ -28,8 +28,6 @@ public abstract class Contenuto {
     @Column(name = "tipo_contenuto", insertable = false, updatable = false)
     protected String tipoContenuto;
     @Setter
-    protected boolean isForContest;
-    @Setter
     protected boolean isInPending;
     @Setter
     protected boolean isDefinitive;

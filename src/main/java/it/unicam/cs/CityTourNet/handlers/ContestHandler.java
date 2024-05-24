@@ -164,7 +164,9 @@ public class ContestHandler {
         }
 
     public boolean caricaPOIPerContest(POI poi) {
-        if(this.isContestPOI) {
+        if(this.isContestPOI && this.contest.getPartecipanti()
+                .stream()
+                .anyMatch(p -> p.getUsername().equals(poi.getUsernameAutore()))) {
             this.caricaContenutoPerContest(poi);
             return true;
         }
@@ -172,7 +174,9 @@ public class ContestHandler {
     }
 
     public boolean caricaItinerarioPerContest(Itinerario itinerario) {
-        if(this.isContestItinerario) {
+        if(this.isContestItinerario && this.contest.getPartecipanti()
+                .stream()
+                .anyMatch(p -> p.getUsername().equals(itinerario.getUsernameAutore()))) {
             this.caricaContenutoPerContest(itinerario);
             return true;
         }
@@ -180,12 +184,9 @@ public class ContestHandler {
     }
 
     private void caricaContenutoPerContest(Contenuto contenuto) {
-        List<Contenuto> conts = this.contest.getContenuti()
+        if (this.contest.getContenuti()
                 .stream()
-                .filter(cont -> cont.getUsernameAutore().equals(contenuto.getUsernameAutore()))
-                .toList();
-        if (conts.isEmpty()) {
-            contenuto.setForContest(true);
+                .noneMatch(cont -> cont.getUsernameAutore().equals(contenuto.getUsernameAutore()))) {
             this.contest.addContenuto(contenuto);
             this.addPunti(contenuto.getUsernameAutore());
         }
@@ -201,11 +202,10 @@ public class ContestHandler {
     }
 
     public List<POI> getPOIsPartecipanti(){
-        List<POI> pois = this.contest.getContenuti().stream()
+        return this.contest.getContenuti().stream()
                 .filter(c -> c instanceof POI)
                 .map(c -> (POI) c)
                 .toList();
-        return pois;
     }
 
     public List<Itinerario> getItinerariPartecipanti(){
@@ -223,9 +223,7 @@ public class ContestHandler {
     public boolean premiaVincitore(String usernameAnimatore, Utente vincitore){
         if(this.contest.getContenuti()
                 .stream()
-                .filter(contenuto -> contenuto.getUsernameAutore().equals(vincitore.getUsername()))
-                .toList()
-                .isEmpty()) {
+                .noneMatch(contenuto -> contenuto.getUsernameAutore().equals(vincitore.getUsername()))) {
             return false;
         }
         if (vincitore instanceof TuristaAutenticato turistaAutenticato){
@@ -239,7 +237,8 @@ public class ContestHandler {
             this.utenteRepository.delete(vincitore);
             this.utenteRepository.saveAndFlush(contributorAutorizzato);
         }
-        Contenuto daCaricare = this.contest.getContenuti().stream()
+        Contenuto daCaricare = this.contest.getContenuti()
+                .stream()
                 .filter(contenuto -> contenuto.getUsernameAutore().equals(vincitore.getUsername()))
                 .findFirst().orElse(null);
         this.caricaContenutoVincitore(daCaricare);
@@ -253,7 +252,6 @@ public class ContestHandler {
     private void caricaContenutoVincitore(Contenuto contenuto) {
         if(contenuto != null) {
             contenuto.setDefinitive(true);
-            contenuto.setForContest(false);
             this.contenutoRepository.saveAndFlush(contenuto);
         }
     }
@@ -263,7 +261,9 @@ public class ContestHandler {
             this.cancellaFilePoiNonVincitori(this.contest.getContenuti());
         }
         this.notificaRepository.deleteAllInBatch(this.notificaRepository.findAll()
-                .stream().filter(n -> n.getUsernameMittente().equals(this.contest.getUsernameAutore())).toList());
+                .stream()
+                .filter(n -> n.getUsernameMittente().equals(this.contest.getUsernameAutore()))
+                .toList());
         this.isAttivo = false;
         this.isContestItinerario = false;
         this.isContestPOI = false;

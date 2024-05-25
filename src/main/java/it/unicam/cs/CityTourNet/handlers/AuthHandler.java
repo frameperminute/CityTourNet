@@ -106,4 +106,10 @@ public class AuthHandler {
             this.utenteRepository.saveAndFlush(daControllare);
         }
     }
+
+    public void setContenutiMinimiAutorizzazione(Integer contenutiMinimiAutorizzazione){
+        GestoreDellaPiattaforma gestoreDellaPiattaforma = (GestoreDellaPiattaforma)
+                this.utenteRepository.findById(this.getGestore().getUsername()).get();
+        gestoreDellaPiattaforma.setContenutiMinimiPerAutorizzazione(Math.abs(contenutiMinimiAutorizzazione));
+    }
 }

@@ -53,5 +53,17 @@ public class AuthController {
                 "eseguire questa funzione", HttpStatus.UNAUTHORIZED);
     }
 
+    @PutMapping("/contenutiMinAuth")
+    public ResponseEntity<Object> setContenutiMinimiAutorizzazione(@RequestParam String username,
+                                                                   @RequestParam String password,
+                                                                   @RequestParam Integer contMin) {
+        if(this.authHandler.isGestore(username, password)){
+            this.authHandler.setContenutiMinimiAutorizzazione(contMin);
+            return new ResponseEntity<>("Numero minimo contenuti autorizzazione e' ora: "
+                    + Math.abs(contMin), HttpStatus.OK);
+        }
+        return new ResponseEntity<>("Non hai i permessi per poter " +
+                "eseguire questa funzione", HttpStatus.UNAUTHORIZED);
+    }
 
 }

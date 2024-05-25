@@ -15,7 +15,6 @@ import java.time.LocalDateTime;
 public class TuristaAutenticato extends Utente {
 
     private int punti = 0;
-    private LocalDateTime dataInizioAutenticazione = LocalDateTime.now();
 
     public TuristaAutenticato(String username, String email, String password) {
         super(username, email, password);

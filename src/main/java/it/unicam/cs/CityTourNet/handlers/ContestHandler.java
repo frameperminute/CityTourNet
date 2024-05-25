@@ -220,12 +220,21 @@ public class ContestHandler {
                 .stream().findFirst().orElse(null);
     }
 
-    public void premiaVincitore(String usernameAnimatore, Utente vincitore){
+    public boolean premiaVincitore(String usernameAnimatore, Utente vincitore){
         if(this.contest.getContenuti()
                 .stream()
                 .noneMatch(contenuto -> contenuto.getUsernameAutore().equals(vincitore.getUsername()))) {
-            return;
+            return false;
         }
+        this.scegliPremio(vincitore);
+        this.caricaContenutoVincitore(vincitore);
+        this.terminaContest();
+        this.notificaRepository.saveAndFlush(new Notifica(usernameAnimatore, vincitore.getUsername(),
+                "Complimenti " + vincitore.getUsername() + " hai vinto il contest!"));
+        return true;
+    }
+
+    private void scegliPremio(Utente vincitore){
         if (vincitore instanceof TuristaAutenticato turistaAutenticato){
             int puntiTotali = turistaAutenticato.getPunti() + this.getGestore().getPuntiVittoriaContest();
             turistaAutenticato.setPunti(puntiTotali);
@@ -237,22 +246,18 @@ public class ContestHandler {
             this.utenteRepository.delete(vincitore);
             this.utenteRepository.saveAndFlush(contributorAutorizzato);
         }
-        Contenuto daCaricare = this.contest.getContenuti()
-                .stream()
-                .filter(contenuto -> contenuto.getUsernameAutore().equals(vincitore.getUsername()))
-                .findFirst().orElse(null);
-        this.caricaContenutoVincitore(daCaricare);
-        this.contest.removeContenuto(daCaricare);
-        this.terminaContest();
-        this.notificaRepository.saveAndFlush(new Notifica(usernameAnimatore, vincitore.getUsername(),
-                "Complimenti " + vincitore.getUsername() + " hai vinto il contest!"));
     }
 
-    private void caricaContenutoVincitore(Contenuto contenuto) {
-        if(contenuto != null) {
-            contenuto.setDefinitive(true);
-            this.salvaStato(contenuto);
-            this.contenutoRepository.saveAndFlush(contenuto);
+    private void caricaContenutoVincitore(Utente vincitore) {
+        Contenuto daCaricare = this.contest.getContenuti()
+                .stream()
+                .filter(c -> c.getUsernameAutore().equals(vincitore.getUsername()))
+                .findFirst().orElse(null);
+        if(daCaricare != null) {
+            daCaricare.setDefinitive(true);
+            this.salvaStato(daCaricare);
+            this.contenutoRepository.saveAndFlush(daCaricare);
+            this.contest.removeContenuto(daCaricare);
         }
     }
 

@@ -3,12 +3,11 @@ package it.unicam.cs.CityTourNet.restControllers;
 import it.unicam.cs.CityTourNet.handlers.CompraVenditaHandler;
 import it.unicam.cs.CityTourNet.handlers.UtentiHandler;
 import it.unicam.cs.CityTourNet.model.contenuto.ProdottoGadget;
-import it.unicam.cs.CityTourNet.model.utente.Contributor;
+import it.unicam.cs.CityTourNet.model.utente.ContributorAutorizzato;
 import it.unicam.cs.CityTourNet.model.utente.Utente;
+import it.unicam.cs.CityTourNet.utils.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +18,7 @@ import java.io.*;
 
 @RestController
 @RequestMapping("/api/v0/compravendita")
-public class CompraVenditaController {
+public class CompraVenditaController extends FileUtils {
 
     private final CompraVenditaHandler compraVenditaHandler;
 
@@ -43,8 +42,9 @@ public class CompraVenditaController {
     }
 
     @GetMapping("/prodotti")
-    public ResponseEntity<Object> getProdottiGadget() {
-        return new ResponseEntity<>(this.compraVenditaHandler.getProdottiGadget(), HttpStatus.OK);
+    public ResponseEntity<Object> getProdottiGadget(@RequestParam(required = false) String nome,
+                                                    @RequestParam(required = false) Integer prezzoMax) {
+        return new ResponseEntity<>(this.compraVenditaHandler.getProdottiGadget(nome, prezzoMax), HttpStatus.OK);
     }
 
     @PutMapping("/acquista")
@@ -72,46 +72,27 @@ public class CompraVenditaController {
                                                       @RequestParam String usernameAutore,
                                                       @RequestParam int prezzo,
                                                       @RequestParam int numPezzi){
-        ProdottoGadget daVendere = new ProdottoGadget(nome,descrizione,usernameAutore,prezzo,numPezzi);
-        if (file.isEmpty()) {
-            return new ResponseEntity<>("File non fornito", HttpStatus.BAD_REQUEST);
+        Utente utente = this.utentiHandler.getUtenteByUsername(usernameAutore);
+        if(!(utente instanceof ContributorAutorizzato)){
+            return new ResponseEntity<>("Non sei autorizzato", HttpStatus.UNAUTHORIZED);
         }
-        String originalFilename = file.getOriginalFilename();
-        String extension = originalFilename.substring(originalFilename.lastIndexOf('.'));
-        if(this.getFilePath(extension) == null) {
-            return new ResponseEntity<>("File non supportato", HttpStatus.BAD_REQUEST);
+        String path = super.controllaFile(file);
+        if(path.equals("File non trovato") || path.equals("File non supportato")) {
+            return new ResponseEntity<>(path, HttpStatus.BAD_REQUEST);
         }
-        String path = this.getFilePath(extension) + originalFilename;
-        daVendere.setFilepath(path);
         File newFile = new File(path);
-        Utente utente = this.utentiHandler.getUtenteByUsername(daVendere.getUsernameAutore());
+        ProdottoGadget daVendere = new ProdottoGadget(nome,descrizione,usernameAutore,prezzo,numPezzi);
+        daVendere.setFilepath(path);
         try (OutputStream os = new FileOutputStream(newFile)) {
             os.write(file.getBytes());
-            if(utente instanceof Contributor){
-                this.compraVenditaHandler.addProdottoGadget(daVendere);
-                return new ResponseEntity<>("Prodotto aggiunto con successo", HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>("Non sei autorizzato", HttpStatus.UNAUTHORIZED);
-            }
+            this.compraVenditaHandler.addProdottoGadget(daVendere);
+            return new ResponseEntity<>("Prodotto aggiunto con successo", HttpStatus.OK);
         } catch (IOException e) {
             return new ResponseEntity<>("Errore durante il salvataggio del file",
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    private String getFilePath(String extension) {
-        switch (extension) {
-            case ".jpg", ".jpeg", ".png", ".gif" -> {
-                return this.photosPath;
-            }
-            case ".mp4" -> {
-                return this.videosPath;
-            }
-            default -> {
-                return null;
-            }
-        }
-    }
 
     @DeleteMapping("/elimina")
     public ResponseEntity<Object> eliminaProdottoGadget(@RequestParam String username,
@@ -121,41 +102,20 @@ public class CompraVenditaController {
         if(utente == null || !utente.isLoggedIn()) {
             return new ResponseEntity<>("Non sei loggato", HttpStatus.BAD_REQUEST);
         }
-        if(utente.getPassword().equals(password)) {
-            this.compraVenditaHandler.removeProdottoGadget(id);
-            return new ResponseEntity<>("Prodotto eliminato con successo", HttpStatus.OK);
+        if(utente instanceof ContributorAutorizzato && utente.getPassword().equals(password)) {
+            if(this.compraVenditaHandler.removeProdottoGadget(id)) {
+                return new ResponseEntity<>("Prodotto eliminato con successo", HttpStatus.OK);
+            }
+            return new ResponseEntity<>("Prodotto non presente", HttpStatus.BAD_REQUEST);
         }
         return new ResponseEntity<>("Non sei autorizzato", HttpStatus.UNAUTHORIZED);
     }
 
     @GetMapping("/fileDownload")
     public ResponseEntity<Object> fileDownload(@RequestParam String filepath) {
-        File file = new File(filepath);
-        String extension = file.getName().substring(file.getName().lastIndexOf('.'));
-        try {
-            InputStreamResource resource = new InputStreamResource(new FileInputStream(file));
-            HttpHeaders header = new HttpHeaders();
-            header.add("Content-disposition",String.format("attachment; filename=\"%s\"",
-                    file.getName()));
-            header.add("Cache-control","no-cache, no-store, must-revalidate");
-            header.add("Pragma", "no-cache");
-            header.add("Expires","0");
-            return ResponseEntity.ok().headers(header).contentLength(file.length())
-                    .contentType(MediaType.parseMediaType(this.getMediaType(extension))).body(resource);
-        } catch (FileNotFoundException e) {
-            return new ResponseEntity<>("File non trovato",HttpStatus.NOT_FOUND);
-        }
+        return super.fileDownload(filepath);
     }
 
-    private String getMediaType(String extension) {
-        return switch (extension) {
-            case ".jpeg", ".jpg" -> "image/jpeg";
-            case ".png" -> "image/png";
-            case ".gif" -> "image/gif";
-            case ".mp4" -> "video/mp4";
-            default -> "";
-        };
-    }
 
     @PutMapping("/eseguiModifiche")
     public ResponseEntity<Object> eseguiModifiche(@RequestParam String username,

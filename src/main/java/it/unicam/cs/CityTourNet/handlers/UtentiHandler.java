@@ -19,11 +19,11 @@ public class UtentiHandler {
     public boolean iscrivi(Utente utente) {
         if(utente.getEmail() != null && utente.getPassword() != null
                 && !this.utenteRepository.existsById(utente.getUsername())) {
-            if(utente instanceof TuristaAutenticato) {
-                this.utenteRepository.saveAndFlush((TuristaAutenticato) utente);
+            if(utente instanceof TuristaAutenticato turistaAutenticato) {
+                this.utenteRepository.saveAndFlush(turistaAutenticato);
                 return true;
-            } else if (utente instanceof Contributor) {
-                this.utenteRepository.saveAndFlush((Contributor) utente);
+            } else if (utente instanceof Contributor contributor) {
+                this.utenteRepository.saveAndFlush(contributor);
                 return true;
             }
         }
@@ -33,15 +33,15 @@ public class UtentiHandler {
     public boolean iscriviUtentiUnici(Utente utente) {
         if(utente.getEmail() != null && utente.getPassword() != null
                 && !this.utenteRepository.existsById(utente.getUsername())
-                && this.utenteRepository.findAllByTipoUtente(utente.getClass().getSimpleName()).isEmpty()) {
-            if(utente instanceof Animatore) {
-                this.utenteRepository.saveAndFlush((Animatore) utente);
+                && this.utenteRepository.findAllByTipoUtente(utente.getTipoUtente()).isEmpty()) {
+            if(utente instanceof Animatore animatore) {
+                this.utenteRepository.saveAndFlush(animatore);
                 return true;
-            } else if (utente instanceof Curatore) {
-                this.utenteRepository.saveAndFlush((Curatore) utente);
+            } else if (utente instanceof Curatore curatore) {
+                this.utenteRepository.saveAndFlush(curatore);
                 return true;
-            } else if (utente instanceof GestoreDellaPiattaforma) {
-                this.utenteRepository.saveAndFlush((GestoreDellaPiattaforma) utente);
+            } else if (utente instanceof GestoreDellaPiattaforma gestoreDellaPiattaforma) {
+                this.utenteRepository.saveAndFlush(gestoreDellaPiattaforma);
                 return true;
             }
         }

@@ -7,10 +7,8 @@ import it.unicam.cs.CityTourNet.model.contenuto.POI;
 import it.unicam.cs.CityTourNet.model.utente.Contributor;
 import it.unicam.cs.CityTourNet.model.utente.ContributorAutorizzato;
 import it.unicam.cs.CityTourNet.model.utente.Utente;
+import it.unicam.cs.CityTourNet.utils.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,17 +21,11 @@ import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/v0/contenuti")
-public class ContenutiController {
+public class ContenutiController extends FileUtils {
 
     private final ContenutiHandler contenutiHandler;
     
     private final UtentiHandler utentiHandler;
-
-    @Value("${photosResources.path}")
-    private String photosPath;
-
-    @Value("${videosResources.path}")
-    private String videosPath;
 
     @Autowired
     public ContenutiController(ContenutiHandler contenutiHandler, UtentiHandler utentiHandler) {
@@ -71,13 +63,15 @@ public class ContenutiController {
     }
 
     @GetMapping("/POIs")
-    public ResponseEntity<Object> visualizzaPOI(){
-        return new ResponseEntity<>(this.contenutiHandler.getPOIS(), HttpStatus.OK);
+    public ResponseEntity<Object> visualizzaPOI(@RequestParam(required = false) String nome){
+        return new ResponseEntity<>(this.contenutiHandler.getPOIS(nome), HttpStatus.OK);
     }
 
     @GetMapping("/itinerari")
-    public ResponseEntity<Object> visualizzaItinerari(){
-        return new ResponseEntity<>(this.contenutiHandler.getItinerari(), HttpStatus.OK);
+    public ResponseEntity<Object> visualizzaItinerari(@RequestParam(required = false) String nome,
+                                                      @RequestParam(required = false) Integer oreMax,
+                                                      @RequestParam(required = false) String difficolta){
+        return new ResponseEntity<>(this.contenutiHandler.getItinerari(nome ,oreMax,difficolta), HttpStatus.OK);
     }
 
     @GetMapping("/contenutiAutore")
@@ -96,7 +90,6 @@ public class ContenutiController {
                                             @RequestParam String nome,
                                             @RequestParam String descrizione,
                                             @RequestParam String usernameAutore) {
-        POI poi = new POI(nome, descrizione, usernameAutore);
         if (file.isEmpty()) {
             return new ResponseEntity<>("File non fornito", HttpStatus.BAD_REQUEST);
         }
@@ -104,42 +97,31 @@ public class ContenutiController {
         if(utente == null || !utente.isLoggedIn()) {
             return new ResponseEntity<>("Non sei loggato", HttpStatus.UNAUTHORIZED);
         }
-        String originalFilename = file.getOriginalFilename();
-        String extension = originalFilename.substring(originalFilename.lastIndexOf('.'));
-        if(this.getFilePath(extension) == null) {
-            return new ResponseEntity<>("File non supportato", HttpStatus.BAD_REQUEST);
+        String path = super.controllaFile(file);
+        if(path.equals("File non trovato") || path.equals("File non supportato")) {
+            return new ResponseEntity<>(path, HttpStatus.BAD_REQUEST);
         }
-        String path = this.getFilePath(extension) + originalFilename;
-        poi.setFilepath(path);
         File newFile = new File(path);
+        POI poi = new POI(nome, descrizione, usernameAutore);
+        poi.setFilepath(path);
         try (OutputStream os = new FileOutputStream(newFile)) {
             os.write(file.getBytes());
-            if(utente instanceof ContributorAutorizzato) {
-                this.contenutiHandler.addPOI(poi);
-                return new ResponseEntity<>("POI salvato", HttpStatus.OK);
-            } else if(utente instanceof Contributor){
-                this.contenutiHandler.addPOIInPending(poi);
-                return new ResponseEntity<>("POI salvato in pending", HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>("Non sei autorizzato", HttpStatus.UNAUTHORIZED);
-            }
+            return this.scegliCaricamentoPOI(poi, utente);
         } catch (IOException e) {
             return new ResponseEntity<>("Errore durante il salvataggio del file",
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    private String getFilePath(String extension) {
-        switch (extension) {
-            case ".jpg", ".jpeg", ".png", ".gif" -> {
-                return this.photosPath;
-            }
-            case ".mp4" -> {
-                return this.videosPath;
-            }
-            default -> {
-                return null;
-            }
+    private ResponseEntity<Object> scegliCaricamentoPOI(POI poi, Utente utente) {
+        if(utente instanceof ContributorAutorizzato) {
+            this.contenutiHandler.addPOI(poi);
+            return new ResponseEntity<>("POI salvato", HttpStatus.OK);
+        } else if(utente instanceof Contributor){
+            this.contenutiHandler.addPOIInPending(poi);
+            return new ResponseEntity<>("POI salvato in pending", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Non sei autorizzato", HttpStatus.UNAUTHORIZED);
         }
     }
 
@@ -171,39 +153,18 @@ public class ContenutiController {
                                                     @RequestParam long ID) {
         Utente utente = this.utentiHandler.getUtenteByUsername(username);
         if(utente != null && utente.getPassword().equals(password)) {
-            this.contenutiHandler.removeContenuto(ID);
-            return new ResponseEntity<>("Contenuto eliminato", HttpStatus.OK);
+            if(this.contenutiHandler.removeContenuto(ID)) {
+                return new ResponseEntity<>("Contenuto eliminato", HttpStatus.OK);
+            }
+            return new ResponseEntity<>("Contenuto inesistente oppure Il POI e' utilizzato " +
+                    "in uno o piu' itinerari e non puo' essere eliminato", HttpStatus.BAD_REQUEST);
         }
         return new ResponseEntity<>("Non sei autorizzato", HttpStatus.UNAUTHORIZED);
     }
 
     @GetMapping("/fileDownload")
     public ResponseEntity<Object> fileDownload(@RequestParam String filepath) {
-        File file = new File(filepath);
-        String extension = file.getName().substring(file.getName().lastIndexOf('.'));
-        try {
-            InputStreamResource resource = new InputStreamResource(new FileInputStream(file));
-            HttpHeaders header = new HttpHeaders();
-            header.add("Content-disposition",String.format("attachment; filename=\"%s\"",
-                    file.getName()));
-            header.add("Cache-control","no-cache, no-store, must-revalidate");
-            header.add("Pragma", "no-cache");
-            header.add("Expires","0");
-            return ResponseEntity.ok().headers(header).contentLength(file.length())
-                    .contentType(MediaType.parseMediaType(this.getMediaType(extension))).body(resource);
-        } catch (FileNotFoundException e) {
-            return new ResponseEntity<>("File non trovato",HttpStatus.NOT_FOUND);
-        }
-    }
-
-    private String getMediaType(String extension) {
-        return switch (extension) {
-            case ".jpeg", ".jpg" -> "image/jpeg";
-            case ".png" -> "image/png";
-            case ".gif" -> "image/gif";
-            case ".mp4" -> "video/mp4";
-            default -> "";
-        };
+        return super.fileDownload(filepath);
     }
 
     @PutMapping("/eseguiModifiche")
@@ -231,7 +192,8 @@ public class ContenutiController {
             if(this.contenutiHandler.annullaModifiche(ID)) {
                 return new ResponseEntity<>("Modifiche annullate", HttpStatus.OK);
             }
-            return new ResponseEntity<>("Il contenuto e' gia' alla sua prima versione", HttpStatus.OK);
+            return new ResponseEntity<>("Il contenuto e' gia' alla sua prima versione" +
+                    "oppure non sono piu' presenti alcuni dei POI a cui l'Itinerario si riferisce", HttpStatus.BAD_REQUEST);
         }
         return new ResponseEntity<>("Non sei autorizzato", HttpStatus.UNAUTHORIZED);
     }

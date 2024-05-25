@@ -12,10 +12,9 @@ import lombok.Setter;
 @NoArgsConstructor(force = true)
 @DiscriminatorValue("ContributorAutorizzato")
 public class ContributorAutorizzato extends Utente{
-    private int esitiNegativi;
+    private int esitiNegativi = 0;
 
     public ContributorAutorizzato(String username, String email, String password) {
         super(username, email, password);
-        this.esitiNegativi = 0;
     }
 }

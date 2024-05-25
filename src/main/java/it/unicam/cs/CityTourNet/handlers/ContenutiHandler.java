@@ -75,28 +75,37 @@ public class ContenutiHandler {
                 .toList();
     }
 
-    public List<POI> getPOIS(){
+    public List<POI> getPOIS(String nome){
         return this.contenutoRepository.findAll().stream()
+                .filter(c -> nome == null || c.getNome().equalsIgnoreCase(nome))
                 .filter(c -> c instanceof POI && c.isDefinitive())
                 .map(c -> (POI) c)
                 .toList();
     }
 
-    public List<Itinerario> getItinerari(){
+    public List<Itinerario> getItinerari(String nome, Integer oreMax, String difficolta){
         return this.contenutoRepository.findAll().stream()
+                .filter(c -> nome == null || c.getNome().equalsIgnoreCase(nome))
                 .filter(c -> c instanceof Itinerario && c.isDefinitive())
                 .map(c -> (Itinerario) c)
+                .filter(c -> oreMax == null || c.getOre() <= oreMax)
+                .filter(c -> difficolta == null || c.getDifficolta().equalsIgnoreCase(difficolta))
                 .toList();
     }
 
 
-    public void removeContenuto(long id){
+    public boolean removeContenuto(long id){
         if(this.contenutoRepository.existsById(id)) {
             Contenuto daEliminare = this.contenutoRepository.findById(id).get();
             if(daEliminare instanceof POI) {
-                File fileDaCancellare = new File(((POI) daEliminare).getFilepath());
-                if (fileDaCancellare.exists()) {
-                    fileDaCancellare.delete();
+                if(this.contenutoRepository.findAll().stream()
+                        .noneMatch(i -> i instanceof Itinerario && ((Itinerario) i).getIndiciPOIs().contains(id))) {
+                    File fileDaCancellare = new File(((POI) daEliminare).getFilepath());
+                    if (fileDaCancellare.exists()) {
+                        fileDaCancellare.delete();
+                    }
+                } else {
+                    return false;
                 }
             }
             List<ContenutoMemento> mementoStack = this.contenutoMementoRepository.findAll()
@@ -105,7 +114,9 @@ public class ContenutiHandler {
                     .toList();
             this.contenutoMementoRepository.deleteAll(mementoStack);
             this.contenutoRepository.deleteById(id);
+            return true;
         }
+        return false;
     }
 
     public boolean caricaDefinitivamente(long id){

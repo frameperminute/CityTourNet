@@ -41,11 +41,13 @@ public class CompraVenditaHandler {
         return null;
     }
 
-    public List<ProdottoGadget> getProdottiGadget(){
+    public List<ProdottoGadget> getProdottiGadget(String nome, Integer prezzoMax){
         return this.contenutoRepository.findAll()
                 .stream()
+                .filter(c -> nome == null || c.getNome().equalsIgnoreCase(nome))
                 .filter(c -> c instanceof ProdottoGadget)
                 .map(c -> (ProdottoGadget) c)
+                .filter(c -> prezzoMax == null || c.getPrezzo() <= prezzoMax)
                 .toList();
     }
 
@@ -55,7 +57,7 @@ public class CompraVenditaHandler {
         this.salvaStato(gadget);
     }
 
-    public void removeProdottoGadget(long id){
+    public boolean removeProdottoGadget(long id){
         if(this.contenutoRepository.existsById(id)) {
             Contenuto daEliminare = this.contenutoRepository.findById(id).get();
             List<ContenutoMemento> mementoStack = this.contenutoMementoRepository.findAll()
@@ -64,33 +66,39 @@ public class CompraVenditaHandler {
                     .toList();
             this.contenutoMementoRepository.deleteAll(mementoStack);
             this.contenutoRepository.deleteById(id);
+            return true;
         }
+        return false;
     }
 
     public int getPuntiUtente(String username){
         Utente utente = this.utenteRepository.findById(username).get();
-        if(utente instanceof TuristaAutenticato) {
-            return ((TuristaAutenticato) utente).getPunti();
+        if(utente instanceof TuristaAutenticato turistaAutenticato) {
+            return turistaAutenticato.getPunti();
         }
         return -1;
     }
 
     private void riduciNumeroPezziDisponibili(long id, int numPezzi) {
         ProdottoGadget daAcquistare = this.getProdottoGadget(id);
-        daAcquistare.setNumPezzi(daAcquistare.getNumPezzi() - numPezzi);
-        this.contenutoRepository.saveAndFlush(daAcquistare);
+        if(daAcquistare.getNumPezzi() - numPezzi == 0) {
+            this.removeProdottoGadget(id);
+        } else {
+            daAcquistare.setNumPezzi(daAcquistare.getNumPezzi() - numPezzi);
+            this.contenutoRepository.saveAndFlush(daAcquistare);
+        }
     }
 
     public boolean gestisciAcquistoProdottoGadget(long id, int numPezzi,
                                                   String username, String indirizzo) {
         TuristaAutenticato acquirente = (TuristaAutenticato) this.utenteRepository.findById(username).get();
         ProdottoGadget prodottoDaAcquistare = (ProdottoGadget) this.contenutoRepository.findById(id).get();
-        int totale = prodottoDaAcquistare.getPrezzo()*numPezzi;
+        int totale = prodottoDaAcquistare.getPrezzo() * numPezzi;
         if(prodottoDaAcquistare.getNumPezzi() >= numPezzi) {
             if(acquirente.getPunti() >= totale) {
                 this.riduciNumeroPezziDisponibili(id, numPezzi);
                 acquirente.setPunti(acquirente.getPunti() - totale);
-                this.utenteRepository.saveAndFlush((Utente) acquirente);
+                this.utenteRepository.saveAndFlush(acquirente);
                 this.inviaNotificaAcquistoConfermato(prodottoDaAcquistare.getUsernameAutore(), username,
                         prodottoDaAcquistare.getNome(), numPezzi, totale, indirizzo);
                 return true;

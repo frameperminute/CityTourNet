@@ -9,11 +9,9 @@ import it.unicam.cs.CityTourNet.model.contenuto.POI;
 import it.unicam.cs.CityTourNet.model.contest.ConcreteContest;
 import it.unicam.cs.CityTourNet.model.utente.Animatore;
 import it.unicam.cs.CityTourNet.model.utente.Utente;
+import it.unicam.cs.CityTourNet.utils.FileUtils;
 import it.unicam.cs.CityTourNet.utils.UtenteCredentials;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +24,7 @@ import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/v0/contest")
-public class ContestController {
+public class ContestController extends FileUtils {
 
     private final ContestHandler contestHandler;
 
@@ -36,11 +34,6 @@ public class ContestController {
 
     private final UtentiHandler utentiHandler;
 
-    @Value("${photosResources.path}")
-    private String photosPath;
-
-    @Value("${videosResources.path}")
-    private String videosPath;
 
     @Autowired
     public ContestController(ContestHandler contestHandler, ContenutiHandler contenutiHandler,
@@ -59,18 +52,13 @@ public class ContestController {
         if(!this.contestHandler.isAttivo()) {
             return new ResponseEntity<>("Contest non attivo", HttpStatus.BAD_REQUEST);
         }
-        POI poi = new POI(nome, descrizione, usernameAutore);
-        if (file.isEmpty()) {
-            return new ResponseEntity<>("File non fornito", HttpStatus.BAD_REQUEST);
+        String path = super.controllaFile(file);
+        if(path.equals("File non trovato") || path.equals("File non supportato")) {
+            return new ResponseEntity<>(path, HttpStatus.BAD_REQUEST);
         }
-        String originalFilename = file.getOriginalFilename();
-        String extension = originalFilename.substring(originalFilename.lastIndexOf('.'));
-        if(this.getFilePath(extension) == null) {
-            return new ResponseEntity<>("File non supportato", HttpStatus.BAD_REQUEST);
-        }
-        String path = this.getFilePath(extension) + originalFilename;
-        poi.setFilepath(path);
         File newFile = new File(path);
+        POI poi = new POI(nome, descrizione, usernameAutore);
+        poi.setFilepath(path);
         try (OutputStream os = new FileOutputStream(newFile)) {
             os.write(file.getBytes());
             if(!this.contestHandler.caricaPOIPerContest(poi)) {
@@ -85,47 +73,13 @@ public class ContestController {
         }
     }
 
-    private String getFilePath(String extension) {
-        switch (extension) {
-            case ".jpg", ".jpeg", ".png", ".gif" -> {
-                return this.photosPath;
-            }
-            case ".mp4" -> {
-                return this.videosPath;
-            }
-            default -> {
-                return null;
-            }
-        }
-    }
-
     @GetMapping("/fileDownload")
-    public ResponseEntity<Object> fileDownload(@RequestParam String filepath) {
-        File file = new File(filepath);
-        String extension = file.getName().substring(file.getName().lastIndexOf('.'));
-        try {
-            InputStreamResource resource = new InputStreamResource(new FileInputStream(file));
-            HttpHeaders header = new HttpHeaders();
-            header.add("Content-disposition",String.format("attachment; filename=\"%s\"",
-                    file.getName()));
-            header.add("Cache-control","no-cache, no-store, must-revalidate");
-            header.add("Pragma", "no-cache");
-            header.add("Expires","0");
-            return ResponseEntity.ok().headers(header).contentLength(file.length())
-                    .contentType(MediaType.parseMediaType(this.getMediaType(extension))).body(resource);
-        } catch (FileNotFoundException e) {
-            return new ResponseEntity<>("File non trovato",HttpStatus.NOT_FOUND);
+    public ResponseEntity<Object> fileDownload(@RequestParam String username, @RequestParam String filepath) {
+        Utente utente = this.utentiHandler.getUtenteByUsername(username);
+        if(!(utente instanceof Animatore)) {
+            return new ResponseEntity<>("Non sei autorizzato", HttpStatus.BAD_REQUEST);
         }
-    }
-
-    private String getMediaType(String extension) {
-        return switch (extension) {
-            case ".jpeg", ".jpg" -> "image/jpeg";
-            case ".png" -> "image/png";
-            case ".gif" -> "image/gif";
-            case ".mp4" -> "video/mp4";
-            default -> "";
-        };
+        else return super.fileDownload(filepath);
     }
 
     @PostMapping("/caricaItinerario")
@@ -162,7 +116,11 @@ public class ContestController {
     }
 
     @PutMapping("/selezionaOpzionePOI")
-    public ResponseEntity<Object> selezionaOpzionePOI() {
+    public ResponseEntity<Object> selezionaOpzionePOI(@RequestParam String username) {
+        Utente utente = this.utentiHandler.getUtenteByUsername(username);
+        if(!(utente instanceof Animatore)) {
+            return new ResponseEntity<>("Non sei autorizzato", HttpStatus.BAD_REQUEST);
+        }
         if(!this.contestHandler.isAttivo()) {
             this.contestHandler.selezionaOpzionePOI();
             return new ResponseEntity<>("Opzione POI attivata, " +
@@ -172,7 +130,11 @@ public class ContestController {
     }
 
     @PutMapping("/selezionaOpzioneItinerario")
-    public ResponseEntity<Object> selezionaOpzioneItinerario() {
+    public ResponseEntity<Object> selezionaOpzioneItinerario(@RequestParam String username) {
+        Utente utente = this.utentiHandler.getUtenteByUsername(username);
+        if(!(utente instanceof Animatore)) {
+            return new ResponseEntity<>("Non sei autorizzato", HttpStatus.BAD_REQUEST);
+        }
         if(!this.contestHandler.isAttivo()) {
             this.contestHandler.selezionaOpzioneItinerario();
             return new ResponseEntity<>("Opzione Itinerario attivata, " +
@@ -182,7 +144,11 @@ public class ContestController {
     }
 
     @PutMapping("/selezionaOpzioneTuristiAutenticati")
-    public ResponseEntity<Object> selezionaOpzioneTuristiAutenticati() {
+    public ResponseEntity<Object> selezionaOpzioneTuristiAutenticati(@RequestParam String username) {
+        Utente utente = this.utentiHandler.getUtenteByUsername(username);
+        if(!(utente instanceof Animatore)) {
+            return new ResponseEntity<>("Non sei autorizzato", HttpStatus.BAD_REQUEST);
+        }
         if(!this.contestHandler.isAttivo()) {
             if(this.contestHandler.selezionaOpzioneTuristiAutenticati()) {
                 return new ResponseEntity<>("Opzione turisti autenticati attivata", HttpStatus.OK);
@@ -193,7 +159,11 @@ public class ContestController {
     }
 
     @PutMapping("/selezionaOpzioneContributors")
-    public ResponseEntity<Object> selezionaOpzioneContributors() {
+    public ResponseEntity<Object> selezionaOpzioneContributors(@RequestParam String username) {
+        Utente utente = this.utentiHandler.getUtenteByUsername(username);
+        if(!(utente instanceof Animatore)) {
+            return new ResponseEntity<>("Non sei autorizzato", HttpStatus.BAD_REQUEST);
+        }
         if(!this.contestHandler.isAttivo()) {
             if(this.contestHandler.selezionaOpzioneContributors()) {
                 return new ResponseEntity<>("Opzione contributors attivata", HttpStatus.OK);
@@ -204,7 +174,11 @@ public class ContestController {
     }
 
     @GetMapping("/POIsContest")
-    public ResponseEntity<Object> visualizzaPOIsContest() {
+    public ResponseEntity<Object> visualizzaPOIsContest(@RequestParam String username) {
+        Utente utente = this.utentiHandler.getUtenteByUsername(username);
+        if(!(utente instanceof Animatore)) {
+            return new ResponseEntity<>("Non sei autorizzato", HttpStatus.BAD_REQUEST);
+        }
         if(this.contestHandler.isAttivo()) {
             return new ResponseEntity<>(this.contestHandler.getPOIsPartecipanti(), HttpStatus.OK);
         }
@@ -212,7 +186,11 @@ public class ContestController {
     }
 
     @GetMapping("/itinerariContest")
-    public ResponseEntity<Object> visualizzaItinerariContest() {
+    public ResponseEntity<Object> visualizzaItinerariContest(@RequestParam String username) {
+        Utente utente = this.utentiHandler.getUtenteByUsername(username);
+        if(!(utente instanceof Animatore)) {
+            return new ResponseEntity<>("Non sei autorizzato", HttpStatus.BAD_REQUEST);
+        }
         if(this.contestHandler.isAttivo()) {
             return new ResponseEntity<>(this.contestHandler.getItinerariPartecipanti(), HttpStatus.OK);
         }
@@ -244,10 +222,13 @@ public class ContestController {
         Utente vincitore = this.utentiHandler.getUtenteByUsername(usernameVincitore);
         if(animatore instanceof Animatore && animatore.getPassword().equals(password)) {
             if (this.contestHandler.isAttivo()) {
-                this.contestHandler.premiaVincitore(username,vincitore);
-                this.authHandler.setContestAttivo(false);
-                return new ResponseEntity<>("Il vincitore e' : " + usernameVincitore +
-                        "\nIl contest e' terminato", HttpStatus.OK);
+                if(this.contestHandler.premiaVincitore(username,vincitore)) {
+                    this.authHandler.setContestAttivo(false);
+                    return new ResponseEntity<>("Il vincitore e' : " + usernameVincitore +
+                            "\nIl contest e' terminato", HttpStatus.OK);
+                }
+                return new ResponseEntity<>("L'utente scelto non e' presente " +
+                        "o non ha caricato alcun contenuto per il contest", HttpStatus.BAD_REQUEST);
             }
             return new ResponseEntity<>("Contest non attivo", HttpStatus.BAD_REQUEST);
         }

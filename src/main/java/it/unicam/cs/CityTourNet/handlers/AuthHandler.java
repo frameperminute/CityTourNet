@@ -56,20 +56,12 @@ public class AuthHandler {
                 .stream().findFirst().orElse(null);
     }
 
-    /**
-     * Verifica che il Contributor abbia il numero minimo di contenuti per poter diventare
-     * ContributorAutorizzato e, in caso positivo, lo rende tale, cancellando l'account da Contributor
-     * @param username il nome utente del Contributor che richiede l'autorizzazione
-     * @return true se il Contributor ha raggiunto il numero minimo di contenuti caricati sulla piattaforma,
-     * false altrimenti
-     */
     public boolean richiediAutorizzazione(String username){
         if(!this.utenteRepository.existsById(username) || this.getGestore() == null) {
             return false;
         }
         Contributor contributor = (Contributor) this.utenteRepository.findById(username).get();
-        List<Contenuto> contenutiCaricati = this.contenutoRepository.findContenutiByUsernameAutore(username)
-                .stream().filter(Contenuto::isDefinitive).toList();
+        List<Contenuto> contenutiCaricati = this.contenutoRepository.findContenutiByUsernameAutore(username);
         int contenutiMinimiPerAutorizzazione = this.getGestore().getContenutiMinimiPerAutorizzazione();
         if(contenutiCaricati.size() >= contenutiMinimiPerAutorizzazione){
             ContributorAutorizzato contributorAutorizzato = new ContributorAutorizzato(contributor.getUsername(),
@@ -81,12 +73,6 @@ public class AuthHandler {
         return false;
     }
 
-    /**
-     * Verifica che ogni ContributorAutorizzato abbia caricato almeno un contenuto nell'ultima settimana.
-     * I ContributorAutorizzato che non rispettano questa condizione subiscono una ammonizione. Di questi,
-     * coloro che sono arrivati a 3 ammonizioni, compresa quella appena data, perdono l'autorizzazione e
-     * tornano a essere Contributor
-     */
     public void gestisciAutorizzazioni(){
         this.getContributorAutorizzati()
                 .stream()
@@ -97,10 +83,14 @@ public class AuthHandler {
     private boolean findContenutiRecenti(String username) {
         return this.contenutoRepository.findContenutiByUsernameAutore(username)
                 .stream()
-                .noneMatch(cont -> cont.getDataCreazione().until(LocalDateTime.now(),ChronoUnit.DAYS) <= 7);
+                .filter(cont -> cont.getDataCreazione()
+                        .until(LocalDateTime.now(),ChronoUnit.DAYS) <= 7).toList().isEmpty();
     }
 
     public void gestisciEsitiNegativi(String username){
+        if(!this.utenteRepository.existsById(username) || this.getGestore() == null) {
+            return;
+        }
         ContributorAutorizzato daControllare =
                 (ContributorAutorizzato) this.utenteRepository.findById(username).get();
         daControllare.setEsitiNegativi(daControllare.getEsitiNegativi()+1);
@@ -117,10 +107,13 @@ public class AuthHandler {
         }
     }
 
-    public void setContenutiMinimiAutorizzazione(String username, Integer contenutiMinimiAutorizzazione){
+    public void setPunteggi(String username, Integer contenutiMinimiAutorizzazione,
+                            Integer puntiPartecipazione, Integer puntiVittoria){
         if(this.utenteRepository.findById(username).get() instanceof
                 GestoreDellaPiattaforma gestoreDellaPiattaforma){
             gestoreDellaPiattaforma.setContenutiMinimiPerAutorizzazione(contenutiMinimiAutorizzazione);
+            gestoreDellaPiattaforma.setPuntiPartecipazioneContest(puntiPartecipazione);
+            gestoreDellaPiattaforma.setPuntiVittoriaContest(puntiVittoria);
             this.utenteRepository.saveAndFlush(gestoreDellaPiattaforma);
         }
     }

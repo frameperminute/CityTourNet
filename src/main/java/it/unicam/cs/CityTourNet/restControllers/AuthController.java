@@ -53,12 +53,14 @@ public class AuthController {
                 "eseguire questa funzione", HttpStatus.UNAUTHORIZED);
     }
 
-    @PutMapping("/contenutiMinAuth")
-    public ResponseEntity<Object> setContenutiMinimiAutorizzazione(@RequestParam String username,
-                                                                   @RequestParam String password,
-                                                                   @RequestParam Integer contMin) {
+    @PutMapping("/punteggi")
+    public ResponseEntity<Object> setPunteggi(@RequestParam String username,
+                                              @RequestParam String password,
+                                              @RequestParam(defaultValue = "50") Integer contMin,
+                                              @RequestParam(defaultValue = "10") Integer puntiPartecipazione,
+                                              @RequestParam(defaultValue = "100") Integer puntiVittoria) {
         if(this.authHandler.isGestore(username, password)){
-            this.authHandler.setContenutiMinimiAutorizzazione(username, contMin);
+            this.authHandler.setPunteggi(username, contMin, puntiPartecipazione, puntiVittoria);
             return new ResponseEntity<>("Numero minimo contenuti autorizzazione e' ora: "
                     + Math.abs(contMin), HttpStatus.OK);
         }

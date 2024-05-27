@@ -7,14 +7,16 @@ import it.unicam.cs.CityTourNet.model.utente.ContributorAutorizzato;
 import it.unicam.cs.CityTourNet.model.utente.Utente;
 import it.unicam.cs.CityTourNet.utils.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 
 @RestController
 @RequestMapping("/api/v0/compravendita")
@@ -23,12 +25,6 @@ public class CompraVenditaController extends FileUtils {
     private final CompraVenditaHandler compraVenditaHandler;
 
     private final UtentiHandler utentiHandler;
-
-    @Value("${photosResources.path}")
-    private String photosPath;
-
-    @Value("${videosResources.path}")
-    private String videosPath;
 
     @Autowired
     public CompraVenditaController(CompraVenditaHandler compraVenditaHandler, UtentiHandler utentiHandler) {

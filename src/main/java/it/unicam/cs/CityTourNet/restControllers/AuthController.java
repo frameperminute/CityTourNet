@@ -58,7 +58,7 @@ public class AuthController {
                                                                    @RequestParam String password,
                                                                    @RequestParam Integer contMin) {
         if(this.authHandler.isGestore(username, password)){
-            this.authHandler.setContenutiMinimiAutorizzazione(contMin);
+            this.authHandler.setContenutiMinimiAutorizzazione(username, contMin);
             return new ResponseEntity<>("Numero minimo contenuti autorizzazione e' ora: "
                     + Math.abs(contMin), HttpStatus.OK);
         }

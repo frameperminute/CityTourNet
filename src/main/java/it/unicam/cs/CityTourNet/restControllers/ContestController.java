@@ -115,63 +115,32 @@ public class ContestController extends FileUtils {
         return new ResponseEntity<>("Non sei autorizzato", HttpStatus.UNAUTHORIZED);
     }
 
-    @PutMapping("/selezionaOpzionePOI")
-    public ResponseEntity<Object> selezionaOpzionePOI(@RequestParam String username) {
+    @PutMapping("/selezionaOpzioni")
+    public ResponseEntity<Object> selezionaOpzioni(@RequestParam String username,
+        @RequestParam(defaultValue = "false")Boolean opzionePOI,
+        @RequestParam(defaultValue = "false")Boolean opzioneItinerario,
+        @RequestParam(defaultValue = "false")Boolean opzioneTuristiAutenticati,
+        @RequestParam(defaultValue = "false")Boolean opzioneContributors) {
+        if(opzionePOI == opzioneItinerario) {
+            return new ResponseEntity<>("Non puo' esistere un contest che preveda" +
+                    " sia l'invio di POI che di Itinerari o nessuno dei due", HttpStatus.BAD_REQUEST);
+        }
+        if(!(opzioneTuristiAutenticati || opzioneContributors)) {
+            return new ResponseEntity<>("Non puo' esistere un contest che non preveda" +
+                    " ne' l'invito di TuristiAutenticati ne' di Contributors", HttpStatus.BAD_REQUEST);
+        }
         Utente utente = this.utentiHandler.getUtenteByUsername(username);
         if(!(utente instanceof Animatore)) {
             return new ResponseEntity<>("Non sei autorizzato", HttpStatus.BAD_REQUEST);
         }
         if(!this.contestHandler.isAttivo()) {
-            this.contestHandler.selezionaOpzionePOI();
-            return new ResponseEntity<>("Opzione POI attivata, " +
-                    "opzione Itinerario disattivata", HttpStatus.OK);
+            this.contestHandler.selezionaOpzioni(opzionePOI, opzioneItinerario,
+                    opzioneTuristiAutenticati, opzioneContributors);
+            return new ResponseEntity<>("Opzioni selezionate attivate", HttpStatus.OK);
         }
         return new ResponseEntity<>("Contest gia' attivo", HttpStatus.BAD_REQUEST);
     }
 
-    @PutMapping("/selezionaOpzioneItinerario")
-    public ResponseEntity<Object> selezionaOpzioneItinerario(@RequestParam String username) {
-        Utente utente = this.utentiHandler.getUtenteByUsername(username);
-        if(!(utente instanceof Animatore)) {
-            return new ResponseEntity<>("Non sei autorizzato", HttpStatus.BAD_REQUEST);
-        }
-        if(!this.contestHandler.isAttivo()) {
-            this.contestHandler.selezionaOpzioneItinerario();
-            return new ResponseEntity<>("Opzione Itinerario attivata, " +
-                    "opzione POI disattivata", HttpStatus.OK);
-        }
-        return new ResponseEntity<>("Contest gia' attivo", HttpStatus.BAD_REQUEST);
-    }
-
-    @PutMapping("/selezionaOpzioneTuristiAutenticati")
-    public ResponseEntity<Object> selezionaOpzioneTuristiAutenticati(@RequestParam String username) {
-        Utente utente = this.utentiHandler.getUtenteByUsername(username);
-        if(!(utente instanceof Animatore)) {
-            return new ResponseEntity<>("Non sei autorizzato", HttpStatus.BAD_REQUEST);
-        }
-        if(!this.contestHandler.isAttivo()) {
-            if(this.contestHandler.selezionaOpzioneTuristiAutenticati()) {
-                return new ResponseEntity<>("Opzione turisti autenticati attivata", HttpStatus.OK);
-            }
-            return new ResponseEntity<>("Opzione turisti autenticati disattivata", HttpStatus.OK);
-        }
-        return new ResponseEntity<>("Contest gia' attivo", HttpStatus.BAD_REQUEST);
-    }
-
-    @PutMapping("/selezionaOpzioneContributors")
-    public ResponseEntity<Object> selezionaOpzioneContributors(@RequestParam String username) {
-        Utente utente = this.utentiHandler.getUtenteByUsername(username);
-        if(!(utente instanceof Animatore)) {
-            return new ResponseEntity<>("Non sei autorizzato", HttpStatus.BAD_REQUEST);
-        }
-        if(!this.contestHandler.isAttivo()) {
-            if(this.contestHandler.selezionaOpzioneContributors()) {
-                return new ResponseEntity<>("Opzione contributors attivata", HttpStatus.OK);
-            }
-            return new ResponseEntity<>("Opzione contributors disattivata", HttpStatus.OK);
-        }
-        return new ResponseEntity<>("Contest gia' attivo", HttpStatus.BAD_REQUEST);
-    }
 
     @GetMapping("/POIsContest")
     public ResponseEntity<Object> visualizzaPOIsContest(@RequestParam String username) {
@@ -210,7 +179,7 @@ public class ContestController extends FileUtils {
             }
             return new ResponseEntity<>("Contest non attivo", HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<>("Username o password errati", HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>("Username opzioneItinerario password errati", HttpStatus.BAD_REQUEST);
     }
 
 
@@ -228,11 +197,11 @@ public class ContestController extends FileUtils {
                             "\nIl contest e' terminato", HttpStatus.OK);
                 }
                 return new ResponseEntity<>("L'utente scelto non e' presente " +
-                        "o non ha caricato alcun contenuto per il contest", HttpStatus.BAD_REQUEST);
+                        "opzioneItinerario non ha caricato alcun contenuto per il contest", HttpStatus.BAD_REQUEST);
             }
             return new ResponseEntity<>("Contest non attivo", HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<>("Username o password errati", HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>("Username opzioneItinerario password errati", HttpStatus.BAD_REQUEST);
     }
 
 }

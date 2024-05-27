@@ -79,16 +79,27 @@ public class CompraVenditaHandler {
         return -1;
     }
 
-    private void riduciNumeroPezziDisponibili(long id, int numPezzi) {
-        ProdottoGadget daAcquistare = this.getProdottoGadget(id);
+    private void riduciNumeroPezziDisponibili(ProdottoGadget daAcquistare, int numPezzi) {
         if(daAcquistare.getNumPezzi() - numPezzi == 0) {
-            this.removeProdottoGadget(id);
+            this.removeProdottoGadget(daAcquistare.getID());
         } else {
             daAcquistare.setNumPezzi(daAcquistare.getNumPezzi() - numPezzi);
             this.contenutoRepository.saveAndFlush(daAcquistare);
         }
     }
 
+    /**
+     * Verifica che il ProdottoGadget sia disponibile nella quantita' richiesta dal TuristaAutenticato e
+     * che questi abbia un numero di punti sufficiente.
+     * Se e' cosi', al ProdottoGadget viene sottratta la quantita' richiesta e al TuristaAutenticato viene
+     * sottratta la somma prevista
+     * @param id identificativo ProdottoGadget
+     * @param numPezzi quantita' richiesta
+     * @param username TuristaAutenticato acquirente
+     * @param indirizzo indirizzo di spedizione
+     * @return true se l'operazione e' andata a buon fine, false se non ci sono pezzi e/o punti sufficienti
+     * a effettuare l'acquisto
+     */
     public boolean gestisciAcquistoProdottoGadget(long id, int numPezzi,
                                                   String username, String indirizzo) {
         TuristaAutenticato acquirente = (TuristaAutenticato) this.utenteRepository.findById(username).get();
@@ -96,7 +107,7 @@ public class CompraVenditaHandler {
         int totale = prodottoDaAcquistare.getPrezzo() * numPezzi;
         if(prodottoDaAcquistare.getNumPezzi() >= numPezzi) {
             if(acquirente.getPunti() >= totale) {
-                this.riduciNumeroPezziDisponibili(id, numPezzi);
+                this.riduciNumeroPezziDisponibili(prodottoDaAcquistare, numPezzi);
                 acquirente.setPunti(acquirente.getPunti() - totale);
                 this.utenteRepository.saveAndFlush(acquirente);
                 this.inviaNotificaAcquistoConfermato(prodottoDaAcquistare.getUsernameAutore(), username,
@@ -141,7 +152,12 @@ public class CompraVenditaHandler {
         this.contenutoMementoRepository.saveAndFlush(contenuto.createMemento());
     }
 
-    public boolean recuperaStato(Contenuto contenuto) {
+    /**
+     * Cancella l'ultimo stato del Contenuto e rimette sulla piattaforma quello precedente
+     * @param contenuto Contenuto di cui recuperare lo stato precedente
+     * @return true se esiste uno stato precedente, false altrimenti
+     */
+    private boolean recuperaStato(Contenuto contenuto) {
         List<ContenutoMemento> mementoStack = this.contenutoMementoRepository.findAll()
                 .stream().filter(m -> m.getIDContenuto() == contenuto.getID())
                 .sorted(Comparator.comparingLong(ContenutoMemento::getId))

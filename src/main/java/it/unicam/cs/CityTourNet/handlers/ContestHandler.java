@@ -45,32 +45,14 @@ public class ContestHandler {
         return this.isAttivo;
     }
 
-    public void selezionaOpzioneItinerario(){
+    public void selezionaOpzioni(Boolean opzionePOI, Boolean opzioneItinerario,
+                                 Boolean opzioneTuristiAutenticati, Boolean opzioneContributors){
         if(!this.isAttivo){
-            this.isContestItinerario = true;
-            this.isContestPOI = false;
+            this.isContestPOI = opzionePOI;
+            this.isContestItinerario = opzioneItinerario;
+            this.isContestWithTuristiAutenticati = opzioneTuristiAutenticati;
+            this.isContestWithContributors = opzioneContributors;
         }
-    }
-
-    public void selezionaOpzionePOI(){
-        if(!this.isAttivo){
-            this.isContestPOI = true;
-            this.isContestItinerario = false;
-        }
-    }
-
-    public boolean selezionaOpzioneTuristiAutenticati(){
-        if(!this.isAttivo){
-            this.isContestWithTuristiAutenticati = !this.isContestWithTuristiAutenticati;
-        }
-        return this.isContestWithTuristiAutenticati;
-    }
-
-    public boolean selezionaOpzioneContributors(){
-        if(!this.isAttivo){
-            this.isContestWithContributors = !this.isContestWithContributors;
-        }
-        return this.isContestWithContributors;
     }
 
     public boolean creaContest(ConcreteContest contest){
@@ -85,21 +67,8 @@ public class ContestHandler {
     }
 
     private boolean controllaOpzioni(){
-        boolean isContenutoAttivo = false;
-        boolean isPartecipantiAttivo = false;
-        if(this.isContestItinerario){
-            isContenutoAttivo = true;
-        }
-        if(this.isContestPOI){
-            isContenutoAttivo = true;
-        }
-        if(this.isContestWithTuristiAutenticati){
-            isPartecipantiAttivo = true;
-        }
-        if(this.isContestWithContributors){
-            isPartecipantiAttivo = true;
-        }
-        return isContenutoAttivo && isPartecipantiAttivo;
+        return (this.isContestItinerario != this.isContestPOI)
+                && (this.isContestWithTuristiAutenticati || this.isContestWithContributors);
     }
 
     private void attivaOpzioni(){
@@ -141,6 +110,10 @@ public class ContestHandler {
         }
     }
 
+    /**
+     * Aggiunge i partecipanti al contest se coloro che hanno risposto all'invito come richiesto sono almeno 5
+     * @return true se si verifica quanto scritto sopra, false altrimenti
+     */
     public boolean addPartecipanti() {
         List<Notifica> notifichePartecipanti = this.getNotifichePartecipanti();
         if(notifichePartecipanti.size() >= 5) {
@@ -220,6 +193,14 @@ public class ContestHandler {
                 .stream().findFirst().orElse(null);
     }
 
+    /**
+     * Il vincitore del Contest riceve il premio in base al suo tipo Utente e il suo contenuto viene caricato
+     * definitivamente sulla piattaforma. Poi il Contest viene ripristinato allo stato originale e puo' essere
+     * avviato nuovamente
+     * @param usernameAnimatore
+     * @param vincitore
+     * @return true se tutto va a buon fine, false se il vincitore non ha caricato alcun Contenuto per il Contest
+     */
     public boolean premiaVincitore(String usernameAnimatore, Utente vincitore){
         if(this.contest.getContenuti()
                 .stream()

@@ -135,7 +135,7 @@ public class ContenutiHandler {
         this.contenutoMementoRepository.saveAndFlush(contenuto.createMemento());
     }
 
-    public boolean recuperaStato(Contenuto contenuto) {
+    private boolean recuperaStato(Contenuto contenuto) {
         List<ContenutoMemento> mementoStack = this.contenutoMementoRepository.findAll()
                 .stream().filter(m -> m.getIDContenuto() == contenuto.getID())
                 .sorted(Comparator.comparingLong(ContenutoMemento::getId))

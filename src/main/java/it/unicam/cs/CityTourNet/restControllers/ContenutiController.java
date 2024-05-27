@@ -6,6 +6,7 @@ import it.unicam.cs.CityTourNet.model.contenuto.Itinerario;
 import it.unicam.cs.CityTourNet.model.contenuto.POI;
 import it.unicam.cs.CityTourNet.model.utente.Contributor;
 import it.unicam.cs.CityTourNet.model.utente.ContributorAutorizzato;
+import it.unicam.cs.CityTourNet.model.utente.Curatore;
 import it.unicam.cs.CityTourNet.model.utente.Utente;
 import it.unicam.cs.CityTourNet.utils.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +36,7 @@ public class ContenutiController extends FileUtils {
 
     @GetMapping("/POIsPending")
     public ResponseEntity<Object> visualizzaPOIsInPending(@RequestParam String username){
-        if(this.utentiHandler.getUtenteByUsername(username).getTipoUtente().equals("Curatore")) {
+        if(this.utentiHandler.getUtenteByUsername(username) instanceof Curatore) {
             return new ResponseEntity<>(this.contenutiHandler.getPOIsInPending(), HttpStatus.OK);
         }
         return new ResponseEntity<>("Non sei autorizzato", HttpStatus.UNAUTHORIZED);
@@ -43,7 +44,7 @@ public class ContenutiController extends FileUtils {
 
     @GetMapping("/itinerariPending")
     public ResponseEntity<Object> visualizzaItinerariInPending(@RequestParam String username){
-        if(this.utentiHandler.getUtenteByUsername(username).getTipoUtente().equals("Curatore")) {
+        if(this.utentiHandler.getUtenteByUsername(username) instanceof Curatore) {
             return new ResponseEntity<>(this.contenutiHandler.getItinerariInPending(), HttpStatus.OK);
         }
         return new ResponseEntity<>("Non sei autorizzato", HttpStatus.UNAUTHORIZED);
@@ -52,7 +53,7 @@ public class ContenutiController extends FileUtils {
     @PutMapping("/caricaDefinitivamente")
     public ResponseEntity<Object> caricaDefinitivamente(@RequestParam String username,
                                                         @RequestParam long id){
-        if(this.utentiHandler.getUtenteByUsername(username).getTipoUtente().equals("Curatore")) {
+        if(this.utentiHandler.getUtenteByUsername(username) instanceof Curatore) {
             if(this.contenutiHandler.caricaDefinitivamente(id)) {
                 return new ResponseEntity<>("Trasferimento effettuato",HttpStatus.OK);
             }
@@ -192,8 +193,9 @@ public class ContenutiController extends FileUtils {
             if(this.contenutiHandler.annullaModifiche(ID)) {
                 return new ResponseEntity<>("Modifiche annullate", HttpStatus.OK);
             }
-            return new ResponseEntity<>("Il contenuto e' gia' alla sua prima versione" +
-                    "oppure non sono piu' presenti alcuni dei POI a cui l'Itinerario si riferisce", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Il contenuto e' gia' alla sua prima versione " +
+                    "oppure non sono piu' presenti alcuni dei POI a cui l'Itinerario si riferisce",
+                    HttpStatus.BAD_REQUEST);
         }
         return new ResponseEntity<>("Non sei autorizzato", HttpStatus.UNAUTHORIZED);
     }

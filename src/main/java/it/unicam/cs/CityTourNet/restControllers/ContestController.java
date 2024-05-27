@@ -18,7 +18,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.Objects;
 
@@ -121,6 +124,10 @@ public class ContestController extends FileUtils {
         @RequestParam(defaultValue = "false")Boolean opzioneItinerario,
         @RequestParam(defaultValue = "false")Boolean opzioneTuristiAutenticati,
         @RequestParam(defaultValue = "false")Boolean opzioneContributors) {
+        Utente utente = this.utentiHandler.getUtenteByUsername(username);
+        if(!(utente instanceof Animatore)) {
+            return new ResponseEntity<>("Non sei autorizzato", HttpStatus.BAD_REQUEST);
+        }
         if(opzionePOI == opzioneItinerario) {
             return new ResponseEntity<>("Non puo' esistere un contest che preveda" +
                     " sia l'invio di POI che di Itinerari o nessuno dei due", HttpStatus.BAD_REQUEST);
@@ -128,10 +135,6 @@ public class ContestController extends FileUtils {
         if(!(opzioneTuristiAutenticati || opzioneContributors)) {
             return new ResponseEntity<>("Non puo' esistere un contest che non preveda" +
                     " ne' l'invito di TuristiAutenticati ne' di Contributors", HttpStatus.BAD_REQUEST);
-        }
-        Utente utente = this.utentiHandler.getUtenteByUsername(username);
-        if(!(utente instanceof Animatore)) {
-            return new ResponseEntity<>("Non sei autorizzato", HttpStatus.BAD_REQUEST);
         }
         if(!this.contestHandler.isAttivo()) {
             this.contestHandler.selezionaOpzioni(opzionePOI, opzioneItinerario,
